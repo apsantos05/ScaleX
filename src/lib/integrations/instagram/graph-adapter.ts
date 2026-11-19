@@ -10,7 +10,12 @@ import {
 } from "./types";
 
 /**
- * Adapter oficial — "Instagram API with Instagram Login" (graph.instagram.com).
+ * Adapter oficial da API do Instagram, em dois modos:
+ * - Login unificado (padrão para apps novos da Meta): Login do Facebook para Empresas com
+ *   config_id, token de usuário do sistema (não expira) e API em graph.facebook.com. Uma
+ *   autorização pode liberar várias contas do Instagram (/me/assigned_instagram_accounts).
+ * - Instagram Login (legado, graph.instagram.com): mantido para apps antigos.
+ * Os endpoints de publicação são os mesmos nos dois hosts.
  * Fluxo de publicação: criar container → aguardar FINISHED → media_publish.
  * Referência: https://developers.facebook.com/docs/instagram-platform/content-publishing/
  *
@@ -43,12 +48,14 @@ function classify(status: number, body: GraphErrorBody): ProviderError {
 export class GraphInstagramAdapter implements InstagramAdapter {
   readonly simulated = false;
   private readonly base: string;
+  readonly unified: boolean;
 
   constructor(
     private readonly config: InstagramConfig,
     private readonly fetchImpl: typeof fetch = fetch,
   ) {
-    this.base = `https://graph.instagram.com/${config.graphVersion}`;
+    this.unified = !!config.configId;
+    this.base = `https://graph.${this.unified ? "facebook" : "instagram"}.com/${config.graphVersion}`;
   }
 
   private async call<T>(method: "GET" | "POST", path: string, params: Record<string, string>): Promise<T> {
@@ -69,6 +76,17 @@ export class GraphInstagramAdapter implements InstagramAdapter {
 
   // ───────────── OAuth ─────────────
   authorizeUrl(state: string): string {
+    if (this.unified) {
+      // Com config_id não se envia scope: as permissões vêm da configuração criada no painel da Meta.
+      const u = new URL(`https://www.facebook.com/${this.config.graphVersion}/dialog/oauth`);
+      u.searchParams.set("client_id", this.config.appId);
+      u.searchParams.set("redirect_uri", this.config.redirectUri);
+      u.searchParams.set("response_type", "code");
+      u.searchParams.set("config_id", this.config.configId!);
+      u.searchParams.set("override_default_response_type", "true");
+      u.searchParams.set("state", state);
+      return u.toString();
+    }
     const u = new URL("https://www.instagram.com/oauth/authorize");
     u.searchParams.set("client_id", this.config.appId);
     u.searchParams.set("redirect_uri", this.config.redirectUri);
@@ -78,8 +96,64 @@ export class GraphInstagramAdapter implements InstagramAdapter {
     return u.toString();
   }
 
-  /** code → token curto → token longo (60 dias). */
-  async exchangeCode(code: string): Promise<{ accessToken: string; userId: string; expiresInSec: number; scopes: string[] }> {
+  /**
+   * Login unificado: code → token do usuário do sistema (sem troca por token longo).
+   * expiresInSec = null quando a configuração diz "nunca expira".
+   */
+  private async exchangeUnified(code: string): Promise<{ accessToken: string; userId: string; expiresInSec: number | null; scopes: string[] }> {
+    const t = await this.call<{ access_token: string; expires_in?: number }>("GET", `${this.base}/oauth/access_token`, {
+      client_id: this.config.appId,
+      client_secret: this.config.appSecret,
+      redirect_uri: this.config.redirectUri,
+      code,
+    });
+    const dbg = await this.call<{ data?: { scopes?: string[]; expires_at?: number; user_id?: string; is_valid?: boolean } }>(
+      "GET",
+      `${this.base}/debug_token`,
+      { input_token: t.access_token, access_token: `${this.config.appId}|${this.config.appSecret}` },
+    );
+    const d = dbg.data ?? {};
+    if (d.is_valid === false) throw new ProviderError("Token recebido da Meta é inválido.", "auth");
+    const scopes = d.scopes ?? [];
+    for (const required of ["instagram_basic", "instagram_content_publish"]) {
+      if (!scopes.includes(required)) throw new ProviderError(`Permissão obrigatória não concedida: ${required}`, "permanent");
+    }
+    const exp =
+      d.expires_at && d.expires_at > 0 ? d.expires_at - Math.floor(Date.now() / 1000) : t.expires_in && t.expires_in > 0 ? t.expires_in : null;
+    return { accessToken: t.access_token, userId: String(d.user_id ?? ""), expiresInSec: exp, scopes };
+  }
+
+  /**
+   * Contas do Instagram liberadas por esta autorização. No login unificado podem ser várias;
+   * no modo legado é sempre a própria conta do token.
+   */
+  async listAuthorizedAccounts(accessToken: string): Promise<InstagramProfile[]> {
+    if (!this.unified) return [await this.getProfile(accessToken)];
+    const ids = new Set<string>();
+    let next: string | undefined = `${this.base}/me/assigned_instagram_accounts`;
+    let params: Record<string, string> = { fields: "id", limit: "100", access_token: accessToken };
+    for (let page = 0; next && page < 20; page++) {
+      const r: { data?: { id: string }[]; paging?: { next?: string } } = await this.call("GET", next, params);
+      for (const a of r.data ?? []) ids.add(String(a.id));
+      next = r.paging?.next;
+      params = {}; // o link "next" já traz todos os parâmetros
+    }
+    // Quando o app e a conta estão no mesmo portfólio, a lista pode vir vazia mesmo com acesso.
+    if (ids.size === 0) for (const id of this.config.fallbackAccountIds) ids.add(id);
+    const out: InstagramProfile[] = [];
+    for (const id of ids) {
+      try {
+        out.push(await this.getProfile(accessToken, id));
+      } catch (err) {
+        if (!(err instanceof ProviderError) || err.kind === "transient") throw err; // sem acesso a essa conta: ignora
+      }
+    }
+    return out;
+  }
+
+  /** code → token curto → token longo (60 dias). No login unificado, token do usuário do sistema. */
+  async exchangeCode(code: string): Promise<{ accessToken: string; userId: string; expiresInSec: number | null; scopes: string[] }> {
+    if (this.unified) return this.exchangeUnified(code);
     const short = await this.call<{ access_token: string; user_id: string | number; permissions?: string[] | string }>(
       "POST",
       "https://api.instagram.com/oauth/access_token",
@@ -106,6 +180,8 @@ export class GraphInstagramAdapter implements InstagramAdapter {
   }
 
   async refreshToken(accessToken: string) {
+    // Token de usuário do sistema não é renovável por API; com "nunca expira" isso nem é chamado.
+    if (this.unified) throw new ProviderError("Token do login unificado não é renovável. Reconecte a conta.", "auth");
     const r = await this.call<{ access_token: string; expires_in: number }>(
       "GET",
       "https://graph.instagram.com/refresh_access_token",
@@ -114,7 +190,24 @@ export class GraphInstagramAdapter implements InstagramAdapter {
     return { accessToken: r.access_token, expiresInSec: r.expires_in };
   }
 
-  async getProfile(accessToken: string): Promise<InstagramProfile> {
+  async getProfile(accessToken: string, igUserId?: string): Promise<InstagramProfile> {
+    if (this.unified) {
+      if (!igUserId) throw new ProviderError("ID da conta do Instagram ausente.", "permanent");
+      const p = await this.call<{ id: string; username: string; name?: string; profile_picture_url?: string; followers_count?: number }>(
+        "GET",
+        `/${igUserId}`,
+        { fields: "id,username,name,profile_picture_url,followers_count", access_token: accessToken },
+      );
+      return {
+        providerAccountId: String(p.id),
+        username: p.username,
+        displayName: p.name ?? p.username,
+        avatarUrl: p.profile_picture_url ?? null,
+        // Só contas profissionais aparecem para a API.
+        accountType: "BUSINESS",
+        followersCount: p.followers_count ?? null,
+      };
+    }
     const r = await this.call<{
       user_id?: string;
       id: string;

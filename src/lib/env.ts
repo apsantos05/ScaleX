@@ -45,6 +45,14 @@ export type InstagramConfig = {
   appSecret: string;
   redirectUri: string;
   graphVersion: string;
+  /**
+   * ID da configuração do Login do Facebook para Empresas ("API do Instagram com login unificado").
+   * Apps criados recentemente na Meta só oferecem esse modo. Quando presente, o adapter usa
+   * graph.facebook.com + config_id; sem ele, o modo legado "Instagram Login" (graph.instagram.com).
+   */
+  configId: string | null;
+  /** IDs de contas do Instagram para tentar quando /me/assigned_instagram_accounts vier vazio (mesmo portfólio do app). */
+  fallbackAccountIds: string[];
 };
 
 /** Retorna null quando a integração oficial ainda não foi configurada. */
@@ -58,6 +66,11 @@ export function instagramConfig(): InstagramConfig | null {
     redirectUri:
       process.env.INSTAGRAM_REDIRECT_URI ?? `${appUrl()}/api/integrations/instagram/callback`,
     graphVersion: process.env.INSTAGRAM_GRAPH_VERSION ?? "v25.0",
+    configId: /^\d{5,30}$/.test(process.env.INSTAGRAM_CONFIG_ID ?? "") ? process.env.INSTAGRAM_CONFIG_ID! : null,
+    fallbackAccountIds: (process.env.INSTAGRAM_FALLBACK_ACCOUNT_IDS ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => /^\d{5,30}$/.test(s)),
   };
 }
 

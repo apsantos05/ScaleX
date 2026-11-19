@@ -23,6 +23,7 @@ Legenda: ✅ concluído e verificado · 🟡 parcial · 🧪 simulado (modo demo
 | Motor de jobs | Agendador e executor separados, lease, recuperação, 1 job/conta, backoff, erros classificados, limite diário, reuso de container, renovação de token | 12 testes do motor + worker executado no modo demo **e contra o Supabase** (6/6 simuladas publicadas, logs gravados) |
 | Segurança | Tokens AES-256-GCM, state OAuth assinado + nonce, cookies httpOnly, headers de segurança, `redact` nos logs, autorização por papel no servidor, isolamento por workspace | Testes de segurança e isolamento |
 | LGPD | Exportação JSON do workspace (proprietário), sem credenciais | Rota implementada |
+| Cobrança (Cakto) | Botão Assinar (só proprietário) → sessão de checkout com token opaco → `pay.cakto.com.br/<oferta>?callback=`; webhook `/api/webhooks/cakto` com HMAC + anti-replay + idempotência; plano definido pela oferta paga; atraso/pausa/cancelamento (fim do período, job diário)/reembolso; faturas; cancelamento pela API. **Correção de segurança**: owner/admin podiam alterar `workspaces.plan` via PostgREST — agora só o nome | 15 testes (`tests/billing.test.ts`); `verify:supabase` 37/37; ponta a ponta local: webhook assinado ativou Pro, duplicata ignorada, assinatura inválida 401, reembolso voltou ao Trial, botão abriu `pay.cakto.com.br` |
 | Motor em produção (cron) | Migração `20261119010000_publish_cron.sql`: `pg_cron` chama `GET /api/cron/tick` da Vercel **a cada minuto** via `pg_net`, com URL e `CRON_SECRET` guardados no **Vault** do Supabase (função `trigger_publish_tick`, sem acesso para anon/authenticated) | Job `scalex-publish-tick` ativo; execuções `succeeded`; respostas HTTP 200 `{"promoted":0,"results":[]}` |
 | Membros e convites | Convite por link (token de 32 bytes, só o hash SHA-256 no banco, validade 7 dias, 1 convite ativo por e-mail, conta no limite do plano), revogação, aceite só com o **mesmo e-mail** convidado, troca de papel e remoção com regras (não altera a si mesmo, admin não mexe em proprietário, protege o último proprietário). Migração `20261119020000_invitations.sql` com funções `security definer`; tela em Configurações › Membros; página `/convite/[token]` | 9 testes unitários + **33/33** em `verify:supabase` (13 novas checagens) + fluxo no navegador: dono convida → convidado entra com outro e-mail (bloqueado) → sai, entra com o e-mail certo → aceita → cai no workspace como **Editor** |
 
@@ -49,7 +50,7 @@ Legenda: ✅ concluído e verificado · 🟡 parcial · 🧪 simulado (modo demo
 | Meta / Instagram | App Meta com produto “Instagram API with Instagram Login”, `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`, redirect URI cadastrada, App Review + Business Verification |
 | Criptografia | `TOKEN_ENCRYPTION_KEY` (32 bytes base64) e `SESSION_SECRET` |
 | Worker | ✅ resolvido com `pg_cron` do Supabase chamando `/api/cron/tick` a cada minuto. Se o domínio de produção mudar, atualizar o segredo `scalex_app_url` no Vault |
-| Pagamentos | Gateway (Stripe/Pagar.me) — **cobrança deliberadamente desativada** |
+| Pagamentos | **Cakto** implementada (branch `feat/cakto-billing`): checkout hospedado + webhook assinado. Falta criar produto/ofertas e webhook na Cakto e definir `CAKTO_*` na Vercel — ver `docs/BILLING-CAKTO.md` |
 | Insights | Job de coleta periódica de métricas (adapter já pronto) |
 
 ## Problemas conhecidos

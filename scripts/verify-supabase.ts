@@ -125,6 +125,18 @@ async function main() {
     const gone = await admin.from("workspace_members").select("user_id").eq("workspace_id", A).eq("user_id", b.id);
     check("dono remove membro", !rm.error && gone.data?.length === 0, rm.error?.message);
 
+    // 7c) Cobrança: o dono não consegue mudar o próprio plano; tabelas de cobrança fechadas
+    const selfUpgrade = await a.client.from("workspaces").update({ plan: "scale" }).eq("id", A).select("plan");
+    const planNow = await admin.from("workspaces").select("plan").eq("id", A).single();
+    check("dono NÃO consegue alterar o próprio plano (cobrança)", !!selfUpgrade.error && planNow.data?.plan === "trial", selfUpgrade.error?.message);
+    const rename = await a.client.from("workspaces").update({ name: "Verify A2" }).eq("id", A).select("name");
+    check("dono ainda renomeia o workspace", !rename.error && rename.data?.[0]?.name === "Verify A2", rename.error?.message);
+    const subWrite = await a.client.from("subscriptions").update({ plan: "scale", status: "active" }).eq("workspace_id", A).select("plan");
+    check("dono NÃO altera a própria assinatura", !!subWrite.error || (subWrite.data?.length ?? 0) === 0);
+    const coRead = await a.client.from("billing_checkouts").select("token");
+    const evRead = await a.client.from("billing_events").select("id");
+    check("sessões de checkout e eventos de cobrança não são legíveis por usuários", (coRead.data?.length ?? 0) === 0 && (evRead.data?.length ?? 0) === 0);
+
     // 8) Publicação idempotente + fila do worker
     const key = randomUUID();
     const media = await a.client.from("media_assets").insert({ workspace_id: A, kind: "image", file_name: "v.jpg", mime_type: "image/jpeg", size_bytes: 12, storage_path: pathA, rights_confirmed: true }).select("id").single();

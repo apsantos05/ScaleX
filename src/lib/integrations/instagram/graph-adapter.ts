@@ -4,6 +4,7 @@ import {
   ProviderError,
   type ContainerStatus,
   type InstagramAdapter,
+  type AccountMedia,
   type InstagramProfile,
   type MediaInsights,
   type PublishMediaItem,
@@ -350,6 +351,42 @@ export class GraphInstagramAdapter implements InstagramAdapter {
       access_token: accessToken,
     });
     return { likes: r.like_count ?? null, comments: r.comments_count ?? null };
+  }
+
+
+  async listAccountMedia(accessToken: string, igUserId: string, sinceIso: string, max = 200): Promise<AccountMedia[]> {
+    const since = Date.parse(sinceIso);
+    const out: AccountMedia[] = [];
+    type Page = {
+      data?: { id: string; caption?: string; media_type?: string; media_product_type?: string; permalink?: string; timestamp: string; like_count?: number; comments_count?: number }[];
+      paging?: { next?: string };
+    };
+    let next: string | undefined = `/${igUserId}/media`;
+    let params: Record<string, string> = {
+      fields: "id,caption,media_type,media_product_type,permalink,timestamp,like_count,comments_count",
+      limit: "50",
+      access_token: accessToken,
+    };
+    while (next && out.length < max) {
+      const r: Page = await this.call("GET", next, params);
+      params = {}; // o link "next" já traz todos os parâmetros
+      for (const m of r.data ?? []) {
+        if (Date.parse(m.timestamp) < since) return out; // a lista vem do mais novo para o mais antigo
+        out.push({
+          id: String(m.id),
+          mediaType: m.media_type ?? null,
+          productType: m.media_product_type ?? null,
+          caption: m.caption ?? null,
+          permalink: m.permalink ?? null,
+          timestamp: m.timestamp,
+          likes: m.like_count ?? null,
+          comments: m.comments_count ?? null,
+        });
+        if (out.length >= max) break;
+      }
+      next = r.paging?.next;
+    }
+    return out;
   }
 
 }

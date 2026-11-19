@@ -24,6 +24,18 @@ export type InstagramProfile = {
   followersCount: number | null;
 };
 
+/** Um post da conta, como a API lista (feito pela ScaleX ou direto no Instagram). */
+export type AccountMedia = {
+  id: string;
+  mediaType: string | null;
+  productType: string | null;
+  caption: string | null;
+  permalink: string | null;
+  timestamp: string;
+  likes: number | null;
+  comments: number | null;
+};
+
 export type MediaInsights = {
   reach: number | null;
   views: number | null;
@@ -56,4 +68,6 @@ export interface InstagramAdapter {
   getMediaInsights(accessToken: string, mediaId: string, format?: PublishFormat): Promise<MediaInsights>;
   /** Curtidas e comentários (disponíveis só com a permissão básica). */
   getMediaBasic(accessToken: string, mediaId: string): Promise<{ likes: number | null; comments: number | null }>;
+  /** Posts da conta publicados desde `sinceIso`, do mais novo para o mais antigo (até `max`). */
+  listAccountMedia(accessToken: string, igUserId: string, sinceIso: string, max?: number): Promise<AccountMedia[]>;
 }

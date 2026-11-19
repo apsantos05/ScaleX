@@ -10,7 +10,7 @@ import type {
   PublicationTarget,
   SocialAccount,
   TargetView,
-  Workspace, MediaInsightRow, AccountSnapshot } from "@/lib/domain/types";
+  Workspace, InstagramPost, AccountSnapshot } from "@/lib/domain/types";
 import type { DemoDB, DemoStore } from "./demo-store";
 import type {
   MediaFilter,
@@ -333,7 +333,7 @@ export class DemoRepository implements WorkspaceRepository, SystemRepository {
   }
 
   // Contas demo nunca têm métricas reais.
-  async listMediaInsights(): Promise<MediaInsightRow[]> {
+  async listInstagramPosts(): Promise<InstagramPost[]> {
     return [];
   }
 

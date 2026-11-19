@@ -57,4 +57,8 @@ export class DemoInstagramAdapter implements InstagramAdapter {
   async getMediaBasic() {
     return { likes: null, comments: null };
   }
+
+  async listAccountMedia() {
+    return [];
+  }
 }

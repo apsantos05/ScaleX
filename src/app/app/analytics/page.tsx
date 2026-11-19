@@ -37,11 +37,11 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/app/an
   const from = new Date(now - days * 86_400_000).toISOString();
   const prevFrom = new Date(now - 2 * days * 86_400_000).toISOString();
   const sinceDay = new Date(now - days * 86_400_000).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
-  const [all, campaigns, accounts, insights, snapshots] = await Promise.all([
+  const [all, campaigns, accounts, posts, snapshots] = await Promise.all([
     repo.listTargets(workspace.id, { from: prevFrom }),
     repo.listCampaigns(workspace.id),
     repo.listAccounts(workspace.id),
-    repo.listMediaInsights(workspace.id),
+    repo.listInstagramPosts(workspace.id, from),
     repo.listAccountSnapshots(workspace.id, sinceDay),
   ]);
   const current = all.filter((t) => t.scheduledAt >= from && t.scheduledAt <= new Date(now).toISOString());
@@ -104,7 +104,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/app/an
         </div>
       </Card>
 
-      <InstagramMetrics published={current.filter((t) => t.status === "published")} insights={insights} accounts={accounts} snapshots={snapshots} />
+      <InstagramMetrics posts={posts} accounts={accounts} snapshots={snapshots} periodDays={days} />
 
       <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
         <Card>

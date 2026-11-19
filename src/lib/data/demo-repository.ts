@@ -10,8 +10,7 @@ import type {
   PublicationTarget,
   SocialAccount,
   TargetView,
-  Workspace,
-} from "@/lib/domain/types";
+  Workspace, MediaInsightRow, AccountSnapshot } from "@/lib/domain/types";
 import type { DemoDB, DemoStore } from "./demo-store";
 import type {
   MediaFilter,
@@ -331,6 +330,15 @@ export class DemoRepository implements WorkspaceRepository, SystemRepository {
   async storageUsedBytes(workspaceId: ID) {
     const db = await this.store.read();
     return db.media.filter((m) => m.workspaceId === workspaceId).reduce((s, m) => s + m.sizeBytes, 0);
+  }
+
+  // Contas demo nunca têm métricas reais.
+  async listMediaInsights(): Promise<MediaInsightRow[]> {
+    return [];
+  }
+
+  async listAccountSnapshots(): Promise<AccountSnapshot[]> {
+    return [];
   }
 
   // ───────────── Legendas / Campanhas ─────────────

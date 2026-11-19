@@ -187,3 +187,21 @@ export type InvitationPreview = {
   email: string;
   status: "valid" | "expired" | "revoked" | "accepted";
 };
+
+/** Métricas de uma publicação real, coletadas da API oficial do Instagram. */
+export type MediaInsightRow = {
+  targetId: ID;
+  socialAccountId: ID;
+  reach: number | null;
+  views: number | null;
+  likes: number | null;
+  comments: number | null;
+  saved: number | null;
+  shares: number | null;
+  /** "insights" = métricas completas; "basic" = só curtidas/comentários. */
+  source: "insights" | "basic";
+  lastError: string | null;
+  fetchedAt: ISODate;
+};
+
+export type AccountSnapshot = { socialAccountId: ID; day: string; followersCount: number | null };

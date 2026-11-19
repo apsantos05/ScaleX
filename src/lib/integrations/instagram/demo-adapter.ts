@@ -53,4 +53,8 @@ export class DemoInstagramAdapter implements InstagramAdapter {
   async getMediaInsights() {
     return { reach: null, views: null, likes: null, comments: null, saved: null, shares: null };
   }
+
+  async getMediaBasic() {
+    return { likes: null, comments: null };
+  }
 }

@@ -6,35 +6,56 @@ import { decryptSecret, redact } from "@/lib/security/crypto";
 
 /**
  * Coleta de métricas do Instagram (roda a cada hora via /api/cron/insights).
- * - Publicações reais (não simuladas) dos últimos 30 dias: com a permissão de insights, busca
- *   alcance/visualizações/curtidas/comentários/salvamentos/compartilhamentos; sem ela, só
- *   curtidas e comentários (permissão básica).
  * - Contas reais ativas: um retrato diário de seguidores.
+ * - Todos os posts das contas nos últimos 90 dias (feitos pela ScaleX ou direto no Instagram):
+ *   importados para instagram_posts, com métricas atualizadas. Com a permissão de insights:
+ *   alcance/visualizações/curtidas/comentários/salvamentos/compartilhamentos; sem ela, só
+ *   curtidas e comentários. Posts da última semana a cada hora; os mais antigos a cada 6 horas.
  * Nunca inventa número: o que a API não devolve fica vazio.
  */
 
-const WINDOW_DAYS = 30;
+const POSTS_WINDOW_DAYS = 90;
+const MAX_POSTS_PER_ACCOUNT = 200;
+const MAX_POST_METRICS = 400;
 const REFRESH_AFTER_MS = 55 * 60_000;
-const MAX_TARGETS = 300;
+const REFRESH_OLD_AFTER_MS = 6 * 3_600_000;
 const TIME_BUDGET_MS = 45_000;
 
-type TargetRow = {
+type AccountRow = { id: string; workspace_id: string; provider_account_id: string; scopes: string[]; status: string; is_demo: boolean };
+type PostRow = {
   id: string;
-  workspace_id: string;
   social_account_id: string;
   provider_media_id: string;
-  published_at: string;
-  publications: { format: string } | null;
+  product_type: string | null;
+  posted_at: string;
+  metrics_fetched_at: string | null;
 };
-type AccountRow = { id: string; workspace_id: string; provider_account_id: string; scopes: string[]; status: string; is_demo: boolean };
 
-export type InsightsSyncResult = { media: number; basicOnly: number; failed: number; accounts: number; skipped: number };
+export type InsightsSyncResult = { media: number; basicOnly: number; failed: number; accounts: number; skipped: number; imported: number };
 
 const dayInSaoPaulo = (d = new Date()) => d.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+const errMsg = (err: unknown) => redact(err instanceof ProviderError ? `${err.kind}: ${err.message}` : (err as Error).message).slice(0, 300);
+
+/** Quais posts precisam de métrica agora: os nunca coletados primeiro, depois os mais recentes. */
+export function postsDue(posts: PostRow[], now: Date): { due: PostRow[]; skipped: number } {
+  let skipped = 0;
+  const due = posts
+    .filter((p) => {
+      if (!p.metrics_fetched_at) return true;
+      const old = now.getTime() - Date.parse(p.posted_at) > 7 * 86_400_000;
+      const fresh = now.getTime() - Date.parse(p.metrics_fetched_at) < (old ? REFRESH_OLD_AFTER_MS : REFRESH_AFTER_MS);
+      if (fresh) skipped++;
+      return !fresh;
+    })
+    .sort((a, b) => Number(!!a.metrics_fetched_at) - Number(!!b.metrics_fetched_at) || Date.parse(b.posted_at) - Date.parse(a.posted_at))
+    .slice(0, MAX_POST_METRICS);
+  return { due, skipped };
+}
 
 export async function syncInsights(now = new Date()): Promise<InsightsSyncResult> {
   const started = Date.now();
-  const result: InsightsSyncResult = { media: 0, basicOnly: 0, failed: 0, accounts: 0, skipped: 0 };
+  const elapsed = () => Date.now() - started;
+  const result: InsightsSyncResult = { media: 0, basicOnly: 0, failed: 0, accounts: 0, skipped: 0, imported: 0 };
   const adapter = getGraphAdapter();
   if (!adapter) return result;
   const db = supabaseAdminClient();
@@ -64,7 +85,7 @@ export async function syncInsights(now = new Date()): Promise<InsightsSyncResult
   // ── 1) Retrato diário de seguidores ──
   const today = dayInSaoPaulo(now);
   for (const acc of accounts.values()) {
-    if (Date.now() - started > TIME_BUDGET_MS / 3) break;
+    if (elapsed() > TIME_BUDGET_MS / 4) break;
     const token = await tokenFor(acc.id);
     if (!token) continue;
     try {
@@ -76,60 +97,85 @@ export async function syncInsights(now = new Date()): Promise<InsightsSyncResult
       await db.from("social_accounts").update({ followers_count: p.followersCount, avatar_url: p.avatarUrl, last_synced_at: now.toISOString() }).eq("id", acc.id);
       result.accounts++;
     } catch (err) {
-      console.warn(JSON.stringify({ svc: "insights", event: "profile_failed", account: acc.id, error: redact((err as Error).message) }));
+      console.warn(JSON.stringify({ svc: "insights", event: "profile_failed", account: acc.id, error: errMsg(err) }));
     }
   }
 
-  // ── 2) Métricas por publicação ──
-  const since = new Date(now.getTime() - WINDOW_DAYS * 86_400_000).toISOString();
-  const tRes = await db
-    .from("publication_targets")
-    .select("id, workspace_id, social_account_id, provider_media_id, published_at, publications(format)")
-    .eq("status", "published")
-    .eq("simulated", false)
-    .not("provider_media_id", "is", null)
-    .gte("published_at", since)
-    .order("published_at", { ascending: false })
-    .limit(MAX_TARGETS);
-  if (tRes.error) throw new Error(tRes.error.message);
-  const targets = tRes.data as unknown as TargetRow[];
-  if (targets.length === 0) return result;
-
-  const fresh = await db.from("media_insights").select("target_id, fetched_at").in("target_id", targets.map((t) => t.id));
-  const lastFetch = new Map(((fresh.data ?? []) as { target_id: string; fetched_at: string }[]).map((r) => [r.target_id, Date.parse(r.fetched_at)]));
-
-  for (const t of targets) {
-    if (Date.now() - started > TIME_BUDGET_MS) break;
-    const acc = accounts.get(t.social_account_id);
-    if (!acc) continue;
-    if (now.getTime() - (lastFetch.get(t.id) ?? 0) < REFRESH_AFTER_MS) {
-      result.skipped++;
-      continue;
-    }
+  // ── 2) Importa os posts de cada conta (feitos pela ScaleX ou direto no Instagram) ──
+  const postsSince = new Date(now.getTime() - POSTS_WINDOW_DAYS * 86_400_000).toISOString();
+  const viaScalex = new Set<string>();
+  {
+    const r = await db.from("publication_targets").select("provider_media_id").eq("status", "published").eq("simulated", false).not("provider_media_id", "is", null);
+    for (const row of (r.data ?? []) as { provider_media_id: string }[]) viaScalex.add(row.provider_media_id);
+  }
+  for (const acc of accounts.values()) {
+    if (elapsed() > TIME_BUDGET_MS / 2) break;
     const token = await tokenFor(acc.id);
     if (!token) continue;
-    const base = { target_id: t.id, workspace_id: t.workspace_id, social_account_id: acc.id, provider_media_id: t.provider_media_id, fetched_at: now.toISOString() };
+    try {
+      const media = await adapter.listAccountMedia(token, acc.provider_account_id, postsSince, MAX_POSTS_PER_ACCOUNT);
+      if (media.length === 0) continue;
+      const up = await db.from("instagram_posts").upsert(
+        media.map((m) => ({
+          workspace_id: acc.workspace_id,
+          social_account_id: acc.id,
+          provider_media_id: m.id,
+          media_type: m.mediaType,
+          product_type: m.productType,
+          caption: m.caption?.slice(0, 2200) ?? null,
+          permalink: m.permalink,
+          posted_at: m.timestamp,
+          via_scalex: viaScalex.has(m.id),
+        })),
+        { onConflict: "social_account_id,provider_media_id" },
+      );
+      if (up.error) throw new Error(up.error.message);
+      result.imported += media.length;
+    } catch (err) {
+      console.warn(JSON.stringify({ svc: "insights", event: "media_list_failed", account: acc.id, error: errMsg(err) }));
+    }
+  }
+
+  // ── 3) Métricas dos posts ──
+  const pRes = await db
+    .from("instagram_posts")
+    .select("id, social_account_id, provider_media_id, product_type, posted_at, metrics_fetched_at")
+    .in("social_account_id", [...accounts.keys()])
+    .gte("posted_at", postsSince)
+    .order("posted_at", { ascending: false })
+    .limit(MAX_POSTS_PER_ACCOUNT * accounts.size);
+  if (pRes.error) throw new Error(pRes.error.message);
+  const { due, skipped } = postsDue(pRes.data as PostRow[], now);
+  result.skipped += skipped;
+
+  for (const p of due) {
+    if (elapsed() > TIME_BUDGET_MS * 0.85) break;
+    const acc = accounts.get(p.social_account_id);
+    if (!acc) continue;
+    const token = await tokenFor(acc.id);
+    if (!token) continue;
+    const format = p.product_type === "REELS" ? "REELS" : p.product_type === "STORY" ? "STORIES" : "FEED";
+    const stamp = { metrics_fetched_at: now.toISOString() };
     try {
       if (canReadInsights(acc.scopes ?? [])) {
-        const m = await adapter.getMediaInsights(token, t.provider_media_id, t.publications?.format);
-        // Stories não trazem curtidas/comentários em insights; o restante vem completo.
-        const basic = m.likes == null && m.comments == null && t.publications?.format !== "STORIES" ? await adapter.getMediaBasic(token, t.provider_media_id) : null;
-        await db.from("media_insights").upsert(
-          { ...base, ...m, likes: m.likes ?? basic?.likes ?? null, comments: m.comments ?? basic?.comments ?? null, source: "insights", last_error: null },
-          { onConflict: "target_id" },
-        );
+        const m = await adapter.getMediaInsights(token, p.provider_media_id, format);
+        const basic = m.likes == null && m.comments == null && format !== "STORIES" ? await adapter.getMediaBasic(token, p.provider_media_id) : null;
+        await db
+          .from("instagram_posts")
+          .update({ ...m, likes: m.likes ?? basic?.likes ?? null, comments: m.comments ?? basic?.comments ?? null, source: "insights", last_error: null, ...stamp })
+          .eq("id", p.id);
         result.media++;
       } else {
-        const b = await adapter.getMediaBasic(token, t.provider_media_id);
-        await db.from("media_insights").upsert({ ...base, likes: b.likes, comments: b.comments, source: "basic", last_error: null }, { onConflict: "target_id" });
+        const b = await adapter.getMediaBasic(token, p.provider_media_id);
+        await db.from("instagram_posts").update({ likes: b.likes, comments: b.comments, source: "basic", last_error: null, ...stamp }).eq("id", p.id);
         result.basicOnly++;
       }
     } catch (err) {
-      const msg = err instanceof ProviderError ? `${err.kind}: ${err.message}` : (err as Error).message;
       // Mantém os números anteriores; registra só o erro e o horário da tentativa.
-      await db.from("media_insights").upsert({ ...base, source: "basic", last_error: redact(msg).slice(0, 300) }, { onConflict: "target_id" });
+      await db.from("instagram_posts").update({ last_error: errMsg(err), ...stamp }).eq("id", p.id);
       result.failed++;
     }
   }
+
   return result;
 }

@@ -15,7 +15,7 @@ import type {
   TargetStatus,
   TargetView,
   Workspace,
-  WorkspaceWithRole, MediaInsightRow, AccountSnapshot } from "@/lib/domain/types";
+  WorkspaceWithRole, InstagramPost, AccountSnapshot } from "@/lib/domain/types";
 
 export type NewAccount = Omit<SocialAccount, "id" | "createdAt" | "workspaceId">;
 export type NewMedia = Omit<MediaAsset, "id" | "createdAt" | "workspaceId">;
@@ -76,7 +76,8 @@ export interface WorkspaceRepository {
   deleteMedia(workspaceId: ID, ids: ID[]): Promise<MediaAsset[]>;
   storageUsedBytes(workspaceId: ID): Promise<number>;
   /** Métricas coletadas das publicações do workspace (Analytics). */
-  listMediaInsights(workspaceId: ID): Promise<MediaInsightRow[]>;
+  /** Posts das contas conectadas publicados desde `sinceIso` (mais recentes primeiro). */
+  listInstagramPosts(workspaceId: ID, sinceIso: string): Promise<InstagramPost[]>;
   /** Retratos diários de seguidores a partir de `sinceDay` (AAAA-MM-DD). */
   listAccountSnapshots(workspaceId: ID, sinceDay: string): Promise<AccountSnapshot[]>;
 

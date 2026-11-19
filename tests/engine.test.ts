@@ -43,6 +43,9 @@ class FakeAdapter implements InstagramAdapter {
   async getMediaBasic() {
     return { likes: null, comments: null };
   }
+  async listAccountMedia() {
+    return [];
+  }
   async getMediaInsights() {
     return { reach: null, views: null, likes: null, comments: null, saved: null, shares: null };
   }

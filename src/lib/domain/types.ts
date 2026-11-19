@@ -189,9 +189,17 @@ export type InvitationPreview = {
 };
 
 /** Métricas de uma publicação real, coletadas da API oficial do Instagram. */
-export type MediaInsightRow = {
-  targetId: ID;
+/** Um post de conta conectada (feito pela ScaleX ou direto no Instagram) com as métricas oficiais. */
+export type InstagramPost = {
+  id: ID;
   socialAccountId: ID;
+  providerMediaId: string;
+  mediaType: string | null;
+  productType: string | null;
+  caption: string | null;
+  permalink: string | null;
+  postedAt: ISODate;
+  viaScalex: boolean;
   reach: number | null;
   views: number | null;
   likes: number | null;
@@ -201,7 +209,7 @@ export type MediaInsightRow = {
   /** "insights" = métricas completas; "basic" = só curtidas/comentários. */
   source: "insights" | "basic";
   lastError: string | null;
-  fetchedAt: ISODate;
+  metricsFetchedAt: ISODate | null;
 };
 
 export type AccountSnapshot = { socialAccountId: ID; day: string; followersCount: number | null };

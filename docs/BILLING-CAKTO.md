@@ -40,3 +40,13 @@ Com os valores de teste no `.env.local`, envie entregas assinadas para `http://l
 - assinatura, replay e duplicidade;
 - plano definido pela oferta paga;
 - renovação e reembolso.
+
+## Configuração atual (19/11/2026)
+- **Produto** "ScaleX" (assinatura), ID `3e7cbc5a-c352-416b-bec0-8a441b21d1a3`.
+- **Oferta Starter** `aikka7u`: R$197 a cada 30 dias, sem limite de cobranças, 3 retentativas. Link: https://pay.cakto.com.br/aikka7u
+- **Oferta Pro** `xmzbzm6`: R$497 a cada 30 dias, mesmas regras. Link: https://pay.cakto.com.br/xmzbzm6
+- **Webhook** `85987` → `https://scale-x-kkn5.vercel.app/api/webhooks/cakto`, com os 11 eventos listados acima. O segredo fica no painel da Cakto e no `.env.local`; nunca entra no repositório.
+- **Pendente:**
+  - Definir as variáveis `CAKTO_*` na Vercel.
+  - Publicar a branch com o endpoint.
+  - Rodar "Testar Webhook" na Cakto.

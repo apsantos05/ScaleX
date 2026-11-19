@@ -8,6 +8,8 @@ import type { NextConfig } from "next";
  */
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Em dev o Next registra os argumentos das Server Actions — isso incluiria senhas do login.
+  logging: { serverFunctions: false },
   turbopack: {
     rules: {
       "*.css": {

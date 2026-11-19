@@ -6,10 +6,11 @@ import type { WorkspaceRepository } from "@/lib/data/repository";
  */
 export async function seedDemoWorkspace(repo: WorkspaceRepository, workspaceId: string, count = 6) {
   const niches = ["studio", "lifestyle", "fitness", "beauty", "travel", "food", "tech", "fashion"];
-  for (let i = 0; i < count; i++) {
+  // Chamadas em paralelo: no Supabase cada uma é uma ida à rede.
+  await Promise.all(Array.from({ length: count }, (_, i) => {
     const niche = niches[i % niches.length]!;
     const username = `demo.${niche}_${String(i + 1).padStart(2, "0")}`;
-    await repo.upsertAccount(workspaceId, {
+    return repo.upsertAccount(workspaceId, {
       provider: "instagram",
       providerAccountId: `demo-${workspaceId.slice(0, 8)}-${i + 1}`,
       username,
@@ -25,12 +26,14 @@ export async function seedDemoWorkspace(repo: WorkspaceRepository, workspaceId: 
       tokenExpiresAt: null,
       isDemo: true,
     });
-  }
+  }));
   const accounts = await repo.listAccounts(workspaceId);
   const demo = accounts.filter((a) => a.isDemo);
   const half = Math.ceil(demo.length / 2);
-  await repo.updateAccounts(workspaceId, demo.slice(0, half).map((a) => a.id), { group: "Grupo A", tags: ["demo", "principal"] });
-  await repo.updateAccounts(workspaceId, demo.slice(half).map((a) => a.id), { group: "Grupo B", tags: ["demo"] });
+  await Promise.all([
+    repo.updateAccounts(workspaceId, demo.slice(0, half).map((a) => a.id), { group: "Grupo A", tags: ["demo", "principal"] }),
+    repo.updateAccounts(workspaceId, demo.slice(half).map((a) => a.id), { group: "Grupo B", tags: ["demo"] }),
+  ]);
 
   const campaigns = await repo.listCampaigns(workspaceId);
   if (!campaigns.length) {

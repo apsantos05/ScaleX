@@ -43,3 +43,10 @@ next-env.d.ts
 # ScaleX demo-mode local data (database + uploads)
 /.data/
 !.env.example
+
+# Supabase CLI local state
+/supabase/.temp/
+/supabase/.branches/
+
+# Anotações locais com credenciais — nunca versionar
+/senha db/

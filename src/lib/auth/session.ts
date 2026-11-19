@@ -110,9 +110,16 @@ export async function updatePassword(password: string): Promise<AuthResult> {
 }
 
 function translateAuthError(msg: string): string {
+  // Log sem dados pessoais: apenas a mensagem do provedor, para diagnóstico.
+  console.warn(JSON.stringify({ svc: "auth", event: "provider_error", message: msg }));
   if (/invalid login/i.test(msg)) return "E-mail ou senha inválidos.";
   if (/already registered/i.test(msg)) return "Já existe uma conta com este e-mail.";
   if (/email not confirmed/i.test(msg)) return "Confirme seu e-mail antes de entrar.";
   if (/rate limit/i.test(msg)) return "Muitas tentativas. Aguarde alguns minutos.";
+  if (/invalid/i.test(msg) && /email/i.test(msg)) return "Este endereço de e-mail não é aceito. Use outro e-mail.";
+  if (/sending|smtp|confirmation email/i.test(msg)) {
+    return "Não conseguimos enviar o e-mail de confirmação agora. Tente novamente mais tarde.";
+  }
+  if (/weak|password should/i.test(msg)) return "Senha fraca. Use ao menos 8 caracteres combinando letras e números.";
   return "Não foi possível concluir a autenticação. Tente novamente.";
 }

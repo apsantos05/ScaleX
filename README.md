@@ -27,7 +27,8 @@ Para zerar o modo demo, apague a pasta `.data/`.
 ## Modo real
 
 1. Copie `.env.example` para `.env.local` e preencha Supabase, Meta e chaves.
-2. Aplique a migração: `npx supabase link` e `npx supabase db push`.
+2. Aplique a migração: `npx supabase login`, `npx supabase link --project-ref <ref>` e `npx supabase db push`; valide com `npm run verify:supabase`.
+   Mantenha o relógio do computador sincronizado — com hora errada a sessão do Supabase cai em loop.
 3. Configure no Supabase Auth as URLs de redirect (`/auth/callback`).
 4. Rode o worker em um host Node (ou configure um cron chamando `GET /api/cron/tick` com `Authorization: Bearer $CRON_SECRET`).
 
@@ -40,6 +41,8 @@ Para zerar o modo demo, apague a pasta `.data/`.
 | `npm run worker` | Worker de publicação (`-- --once` para uma rodada) |
 | `npm test` | Testes (Vitest) |
 | `npm run lint` / `npm run typecheck` | Qualidade |
+| `npm run verify:supabase` | Testa RLS, storage e fila contra o Supabase do `.env.local` (cria e remove dados temporários) |
+| `npm run qa:user` | Cria o usuário de QA confirmado (`QA_TEST_EMAIL`/`QA_TEST_PASSWORD`); `-- --delete` remove |
 
 ## Princípios
 

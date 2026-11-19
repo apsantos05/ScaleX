@@ -9,7 +9,9 @@
     "lint": "eslint",
     "test": "vitest run",
     "worker": "tsx scripts/worker.ts",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit",
+    "verify:supabase": "tsx scripts/verify-supabase.ts",
+    "qa:user": "tsx scripts/qa-user.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.7",

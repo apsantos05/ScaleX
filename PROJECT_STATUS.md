@@ -1,6 +1,6 @@
 # ScaleX — PROJECT_STATUS
 
-_Atualizado em 19/11/2026 · Fase 1 (fundação do MVP)_
+_Atualizado em 18/11/2026 · Fase 1 (fundação do MVP) + Supabase de staging conectado_
 
 Legenda: ✅ concluído e verificado · 🟡 parcial · 🧪 simulado (modo demo) · ⏳ pendente
 
@@ -11,7 +11,7 @@ Legenda: ✅ concluído e verificado · 🟡 parcial · 🧪 simulado (modo demo
 | Projeto | Next.js 16.4 (App Router), TS strict, Tailwind 4, ESLint, Vitest, CI GitHub Actions | `npm run lint/typecheck/test/build` verdes |
 | Design system | Tokens dark (paleta do briefing), Geist, Button/Field/Select/Checkbox/Card/Badge/Alert/Dialog/Toast/EmptyState, estados hover/loading/empty/error/success, foco visível, skip-link, `prefers-reduced-motion` | Navegação manual + teclado |
 | Landing page | Hero, recursos, como funciona, segurança, planos, FAQ, CTA (sem números ou depoimentos inventados) | Navegador, desktop e 375 px |
-| Autenticação | Cadastro, login, logout, recuperação/redefinição de senha; validação Zod no cliente e no servidor; rate limit; mensagens sem enumeração de e-mail | Fluxo completo no modo demo |
+| Autenticação | Cadastro, login, logout, recuperação/redefinição de senha; validação Zod no cliente e no servidor; rate limit; mensagens sem enumeração de e-mail | Fluxo completo no modo demo; **login real via Supabase Auth** verificado |
 | Workspaces | Onboarding, múltiplos workspaces, troca de workspace, papéis, auditoria | Navegador |
 | Dashboard | KPIs, gráfico de 14 dias, próximas publicações, histórico, campanhas, alertas (contas a reconectar, falhas 24h, worker parado, integração ausente) — tudo a partir de dados reais | Navegador |
 | Contas | Lista, busca, filtros (status/grupo/etiqueta), seleção múltipla, grupos e etiquetas em lote, sincronizar, desconectar com confirmação, permissões e expiração de token | Navegador (contas demo) |
@@ -19,14 +19,14 @@ Legenda: ✅ concluído e verificado · 🟡 parcial · 🧪 simulado (modo demo
 | Estúdio | Formato → mídia → legenda → contas → data → prévia → confirmação; validação por formato (JPEG, proporção, duração, carrossel 2–10, 2200 caracteres, 30 hashtags); resultado individual por conta; idempotência | Navegador: lote de 6 contas |
 | Calendário | Visões dia/semana/mês, filtros por conta/campanha/status (na URL), detalhes, logs, cancelar, reagendar | Navegador |
 | Campanhas / Histórico / Analytics operacional | CRUD de campanhas com progresso; histórico paginado com cancelamento em lote e auditoria; analytics com comparação de períodos, por conta e por campanha | Navegador |
-| Banco | Migração `supabase/migrations/20261119000000_init.sql`: 14 tabelas, RLS, funções de claim/promote/criação idempotente, bucket privado | ⚠️ revisada, **não aplicada** em projeto Supabase real |
-| Motor de jobs | Agendador e executor separados, lease, recuperação, 1 job/conta, backoff, erros classificados, limite diário, reuso de container, renovação de token | 12 testes do motor + execução real do worker no modo demo |
+| Banco (Supabase) | Migração `supabase/migrations/20261119000000_init.sql` **aplicada** no projeto `Scalex` (`kiiramyrkhkeocirezit`, us-east-2): 14 tabelas, RLS, funções de claim/promote/criação idempotente, bucket privado | `npm run verify:supabase`: **19/19** (isolamento entre usuários, credenciais inacessíveis, storage por workspace, idempotência, funções do worker restritas) |
+| Motor de jobs | Agendador e executor separados, lease, recuperação, 1 job/conta, backoff, erros classificados, limite diário, reuso de container, renovação de token | 12 testes do motor + worker executado no modo demo **e contra o Supabase** (6/6 simuladas publicadas, logs gravados) |
 | Segurança | Tokens AES-256-GCM, state OAuth assinado + nonce, cookies httpOnly, headers de segurança, `redact` nos logs, autorização por papel no servidor, isolamento por workspace | Testes de segurança e isolamento |
 | LGPD | Exportação JSON do workspace (proprietário), sem credenciais | Rota implementada |
 
 ## 🟡 Parciais
 
-- **Driver Supabase** (`supabase-repository.ts`), upload direto ao Storage, Supabase Auth e callback de e-mail: código completo e tipado, **não executado contra um projeto real** (não há credenciais neste ambiente).
+- **Supabase verificado ponta a ponta** (login → workspace → upload direto ao Storage → direitos → agendamento em lote → worker → histórico/logs). **Ainda não verificados**: cadastro com e-mail de confirmação (o domínio `.test` é rejeitado e o SMTP padrão só envia a membros da organização), recuperação de senha por e-mail, troca de workspace e exclusão no modo real.
 - **OAuth Instagram** e **GraphInstagramAdapter**: implementados conforme documentação oficial; **nenhuma chamada real foi feita** (sem App ID/Secret). Requer App Review da Meta para escopos avançados.
 - **Membros**: listagem e papéis funcionam; **convite por e-mail e alteração de papel** ainda não.
 - **Rate limit** de endpoints é em memória (por instância).
@@ -43,7 +43,7 @@ Legenda: ✅ concluído e verificado · 🟡 parcial · 🧪 simulado (modo demo
 
 | Item | Necessário |
 |---|---|
-| Supabase | Criar projeto, aplicar migração (`supabase db push`), preencher `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`; configurar SMTP e URLs de redirect do Auth |
+| Supabase (Auth) | ✅ projeto e migração prontos. Falta: **SMTP próprio** (ex.: Resend) para e-mails de confirmação/recuperação a clientes; Site URL/Redirect URLs de produção |
 | Meta / Instagram | App Meta com produto “Instagram API with Instagram Login”, `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`, redirect URI cadastrada, App Review + Business Verification |
 | Criptografia | `TOKEN_ENCRYPTION_KEY` (32 bytes base64) e `SESSION_SECRET` |
 | Worker | Host Node para `npm run worker` (ou cron externo chamando `/api/cron/tick` com `CRON_SECRET`) |
@@ -58,10 +58,13 @@ Legenda: ✅ concluído e verificado · 🟡 parcial · 🧪 simulado (modo demo
 4. Excluir conta remove (cascade) seus targets no Supabase; no demo eles ficam como “Cancelado”.
 5. `img.decode()` não resolvia no navegador embutido de testes; trocado por `onload` com timeout.
 6. Rotação de `TOKEN_ENCRYPTION_KEY` ainda não suportada (exige re-criptografar credenciais).
+7. **Relógio da máquina**: com o relógio do computador errado, o `@supabase/ssr` considera a sessão expirada, renova em loop e desloga (`refresh_token_already_used`). Mantenha o horário automático ativado no ambiente de desenvolvimento.
+8. Projeto Supabase em **us-east-2**; para usuários no Brasil, `sa-east-1` (São Paulo) teria menor latência.
+9. Em dev, o log de Server Actions do Next foi desativado (`logging.serverFunctions: false`) porque expunha a senha do login no terminal.
 
 ## Próximas prioridades
 
-1. Provisionar Supabase de staging, aplicar migração e rodar a suíte contra ele (incluir testes de RLS com dois usuários).
+1. ~~Supabase de staging + testes de RLS~~ ✅ feito. Configurar SMTP próprio no Supabase Auth.
 2. Criar o app na Meta, testar OAuth + publicação real em uma conta profissional de teste; revisar números de limite.
 3. Deploy do worker (Railway/Fly) com healthcheck e alerta de “fila parada”.
 4. Convites de membros, gestão de papéis e exclusão de workspace/conta (LGPD: direito ao esquecimento).

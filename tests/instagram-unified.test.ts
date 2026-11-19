@@ -78,3 +78,17 @@ describe("Instagram com login unificado (config_id)", () => {
     expect(new URL(legacy.authorizeUrl("st")).host).toBe("www.instagram.com");
   });
 });
+
+describe("permissões nos dois modos de login", async () => {
+  const { canPublish, canReadInsights } = await import("@/lib/domain/instagram-scopes");
+  it("aceita a permissão de publicar do login unificado e do legado", () => {
+    expect(canPublish(["instagram_basic", "instagram_content_publish"])).toBe(true);
+    expect(canPublish(["instagram_business_basic", "instagram_business_content_publish"])).toBe(true);
+    expect(canPublish(["instagram_basic", "instagram_manage_comments"])).toBe(false);
+  });
+  it("reconhece insights nos dois nomes", () => {
+    expect(canReadInsights(["instagram_manage_insights"])).toBe(true);
+    expect(canReadInsights(["instagram_business_manage_insights"])).toBe(true);
+    expect(canReadInsights(["instagram_basic"])).toBe(false);
+  });
+});

@@ -9,6 +9,7 @@ import { Checkbox, Field, Input, Select } from "@/components/ui/form";
 import { AccountStatusBadge, Avatar, Badge, Card, EmptyState } from "@/components/ui/primitives";
 import { SortableTh, type SortState } from "@/components/ui/table";
 import { toast } from "@/components/ui/toast";
+import { canPublish, canReadInsights } from "@/lib/domain/instagram-scopes";
 import { parseTags } from "@/lib/domain/schemas";
 import type { SocialAccount } from "@/lib/domain/types";
 import { formatNumber, formatRelative } from "@/lib/utils";
@@ -298,8 +299,8 @@ export function AccountsManager({
                 <td className="py-3 tabular-nums text-fg-muted">{formatNumber(a.followersCount)}</td>
                 <td className="py-3 text-fg-muted" suppressHydrationWarning>{formatRelative(a.lastSyncedAt, undefined, true)}</td>
                 <td className="py-3 pr-4 text-xs text-fg-muted">
-                  {a.scopes.includes("instagram_business_content_publish") ? "Publicação" : <span className="text-warning">Sem publicação</span>}
-                  {a.scopes.includes("instagram_business_manage_insights") && " · Insights"}
+                  {canPublish(a.scopes) ? "Publicação" : <span className="text-warning">Sem publicação</span>}
+                  {canReadInsights(a.scopes) && " · Insights"}
                 </td>
               </tr>
             ))}

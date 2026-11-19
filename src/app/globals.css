@@ -104,3 +104,18 @@
 
 /* Área segura (notch / barra de gestos) para a navegação inferior */
 .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+
+/* Páginas legais: tipografia de leitura longa */
+.legal h1 { font-size: 1.875rem; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+.legal h2 { margin-top: 2.5rem; font-size: 1.25rem; font-weight: 600; letter-spacing: -0.01em; }
+.legal h3 { margin-top: 1.5rem; font-size: 1rem; font-weight: 600; }
+.legal p, .legal li { margin-top: 0.75rem; font-size: 0.975rem; line-height: 1.7; color: var(--fg-muted); }
+.legal strong { color: var(--fg); font-weight: 600; }
+.legal ul, .legal ol { margin-top: 0.5rem; padding-left: 1.25rem; }
+.legal ul { list-style: disc; }
+.legal ol { list-style: decimal; }
+.legal a { color: var(--fg); text-decoration: underline; text-underline-offset: 3px; }
+.legal table { margin-top: 1rem; width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.legal th, .legal td { border: 1px solid var(--border); padding: 0.6rem 0.75rem; text-align: left; vertical-align: top; color: var(--fg-muted); }
+.legal th { color: var(--fg); font-weight: 600; background: var(--surface); }
+.legal .lead { margin-top: 0.5rem; color: var(--fg-subtle); font-size: 0.875rem; }

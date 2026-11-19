@@ -16,6 +16,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge, Logo } from "@/components/ui/primitives";
 import { PLANS } from "@/lib/domain/plans";
+import { LEGAL_PAGES } from "@/lib/legal";
 
 const FEATURES = [
   {
@@ -312,6 +313,13 @@ export default function LandingPage() {
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 py-8 text-sm text-fg-subtle sm:flex-row">
           <Logo className="text-fg-muted" />
+          <nav aria-label="Documentos legais" className="flex flex-wrap justify-center gap-x-5 gap-y-2">
+            {LEGAL_PAGES.map((p) => (
+              <Link key={p.href} href={p.href} className="hover:text-fg">
+                {p.label}
+              </Link>
+            ))}
+          </nav>
           <p>© {new Date().getFullYear()} ScaleX. Não afiliada à Meta Platforms, Inc.</p>
         </div>
       </footer>

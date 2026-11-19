@@ -28,10 +28,9 @@ export function Checkbox({ className, ...props }: Omit<ComponentProps<"input">, 
   return (
     <input
       type="checkbox"
-      className={cn(
-        "size-4 shrink-0 cursor-pointer appearance-none rounded border border-border-strong bg-surface transition-colors checked:border-brand checked:bg-brand checked:bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22 fill=%22white%22><path d=%22M6.2 11.3 3 8.1l1.1-1.1 2.1 2.1 5.7-5.7L13 4.5z%22/></svg>')] indeterminate:border-brand indeterminate:bg-brand",
-        className,
-      )}
+      // Checkbox nativo com accent-color: estados marcado/indeterminado/foco garantidos pelo navegador.
+      // (A versão com appearance-none + SVG em data-URL perdia o estado "marcado" na fusão de classes.)
+      className={cn("size-4 shrink-0 cursor-pointer accent-[var(--brand)] disabled:cursor-not-allowed", className)}
       {...props}
     />
   );

@@ -1,11 +1,26 @@
-# @scalex.app — primeiros posts e destaques
+# @scalexspam — primeiros posts e destaques
+
+## Perfil
+
+**Nome** (entra na busca do Instagram): `ScaleX · multicontas`
+
+**Bio** (copie exatamente, com as quebras de linha):
+```
+> scalex --contas=todas
+posta em lote. sem senha. sem bot.
+acesso antecipado ↓
+```
+Tom: minúsculas, frases curtas, cara de ferramenta de dev. O link do acesso antecipado vai no campo de link, logo abaixo da seta.
+
+---
 
 Ordem sugerida de publicação (um por dia ou a cada dois dias):
 1. **Carrossel "O que é a ScaleX"** (apresenta a marca)
 2. **Reel de demonstração** (prova visual)
 3. **Carrossel "4 atalhos de risco"** (conteúdo para salvar e compartilhar)
+4. **Carrossel "5 hábitos multicontas"** (rotina prática, para salvar)
 
-Depois de publicar os três, **fixe todos** no perfil, nesta ordem: Reel → O que é a ScaleX → 4 atalhos.
+Depois de publicar os três primeiros, **fixe-os** no perfil (o Instagram permite até 3), nesta ordem: Reel → O que é a ScaleX → 4 atalhos.
 
 > Regra da casa: nada de números ou resultados inventados. Quando tivermos clientes reais, entram depoimentos e números de verdade.
 
@@ -23,7 +38,7 @@ A ScaleX junta tudo em um painel: você sobe o conteúdo uma vez, escolhe as con
 A conexão é pelo login oficial do Instagram, sem compartilhar senha.
 
 Estamos em acesso antecipado: dá para testar com contas de demonstração pelo link na bio.
-Siga @scalex.app para acompanhar o lançamento.
+Siga @scalexspam para acompanhar o lançamento.
 
 #gestaoderedessociais #marketingdigital #socialmedia #instagram
 ```
@@ -80,6 +95,23 @@ Salve o checklist do último slide e mande para quem cuida das contas com você.
 
 ---
 
+## Post 4 — Carrossel "5 hábitos de quem opera 20+ contas" (7 imagens)
+Arquivos: `carrossel-3-habitos-multicontas/01.png` a `07.png` (na ordem).
+Objetivo: salvamentos e compartilhamentos entre quem divide a operação. Publique 2–3 dias depois do Post 3.
+
+**Legenda**
+```
+Quem opera 20 contas ou mais do Instagram não dá conta só com planilha e memória.
+
+São 5 hábitos simples. O mais ignorado é o segundo: saber de onde veio cada mídia e se você tem direito de usar.
+
+Salve para montar sua rotina e mande para quem divide as contas com você.
+
+#socialmedia #marketingdigital #gestaoderedessociais #produtividade
+```
+
+---
+
 ## Destaques (capas em `destaques/`)
 Cada destaque precisa de pelo menos um story. Monte assim, da esquerda para a direita:
 
@@ -87,7 +119,7 @@ Cada destaque precisa de pelo menos um story. Monte assim, da esquerda para a di
 |---|---|---|
 | **Comece** | `capa-comece.png` | Os 6 slides do carrossel "O que é a ScaleX" |
 | **Recursos** | `capa-recursos.png` | O Reel de demonstração (compartilhe no story) |
-| **Segurança** | `capa-seguranca.png` | Os 6 slides do carrossel "4 atalhos" |
+| **Segurança** | `capa-seguranca.png` | Os 6 slides do carrossel "4 atalhos" + os slides 03 e 06 do "5 hábitos" |
 | **Planos** | `capa-planos.png` | Print da seção de planos do site |
 | **Dúvidas** | `capa-duvidas.png` | 3–4 stories com as perguntas frequentes do site |
 

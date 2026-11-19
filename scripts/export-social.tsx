@@ -100,6 +100,48 @@ const CARROSSEIS: Record<string, Slide[]> = {
       ask: "Link na bio",
     },
   ],
+  "carrossel-3-habitos-multicontas": [
+    { kind: "hook", title: "5 hábitos de quem opera 20+ contas do Instagram sem viver de planilha", sub: "O segundo é o mais ignorado." },
+    {
+      kind: "point",
+      tag: "01",
+      title: "Agrupe as contas antes de postar",
+      body: "Por nicho, por cliente ou por objetivo. Quem separa antes não precisa lembrar onde cada post vai.",
+      fix: "Dica: dê a cada grupo uma etiqueta e um horário fixo de publicação.",
+    },
+    {
+      kind: "point",
+      tag: "02",
+      title: "Saiba de onde veio cada mídia",
+      body: "Conteúdo sem direito de uso é o caminho mais curto para denúncia e remoção de post.",
+      fix: "Dica: só deixe entrar na fila a mídia com origem e direitos registrados.",
+    },
+    {
+      kind: "point",
+      tag: "03",
+      title: "Tenha legendas-base, não legendas copiadas",
+      body: "Uma estrutura reutilizável, adaptada ao tom de cada conta. Legenda idêntica em todas parece automação de baixa qualidade.",
+    },
+    {
+      kind: "point",
+      tag: "04",
+      title: "Um calendário só, com status por conta",
+      body: "Agendado, publicado ou falhou: tudo no mesmo lugar, conta por conta. Planilha não avisa quando algo dá errado.",
+    },
+    {
+      kind: "point",
+      tag: "05",
+      title: "Leia o motivo da falha antes de repostar",
+      body: "Formato errado, mídia recusada ou conta desconectada pedem soluções diferentes. Repostar no escuro repete o erro.",
+      fix: "Dica: corrija a causa e só então reagende.",
+    },
+    {
+      kind: "payoff",
+      title: "Sua rotina multicontas em 5 hábitos:",
+      items: ["Contas agrupadas e etiquetadas", "Mídia com direitos registrados", "Legendas-base adaptadas por conta", "Calendário único com status", "Falha lida antes de repostar"],
+      ask: "Salve e mande para quem divide as contas com você",
+    },
+  ],
 };
 
 function slideFrame(children: ReactElement[], index: number, total: number, isLast: boolean) {
@@ -135,7 +177,7 @@ function slideFrame(children: ReactElement[], index: number, total: number, isLa
       "div",
       { style: { display: "flex", alignItems: "center", justifyContent: "space-between" } },
       h("div", { style: { display: "flex", height: 8, width: 140, background: BRAND.red } }),
-      h("div", { style: { display: "flex", fontSize: 30, color: isLast ? BRAND.white : MUTED, fontWeight: 600 } }, isLast ? "@scalex.app" : "Arrasta →"),
+      h("div", { style: { display: "flex", fontSize: 30, color: isLast ? BRAND.white : MUTED, fontWeight: 600 } }, isLast ? "@scalexspam" : "Arrasta →"),
     ),
   );
 }

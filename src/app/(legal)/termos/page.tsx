@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LEGAL } from "@/lib/legal";
+import { LEGAL, LEGAL_IDENTITY } from "@/lib/legal";
 
 export const metadata: Metadata = { title: "Termos de Uso" };
 
@@ -12,7 +12,7 @@ export default function TermsPage() {
       <p className="lead">Versão vigente: {L.updatedAt}</p>
 
       <p>
-        Estes termos regem o uso da {L.brand}, serviço oferecido por <strong>{L.company}</strong>, CNPJ {L.cnpj}, com sede em {L.city}. Ao criar
+        Estes termos regem o uso da {L.brand}, serviço oferecido por <strong>{LEGAL_IDENTITY}</strong>. Ao criar
         uma conta, você declara que leu e aceita estes termos e a <Link href="/privacidade">Política de Privacidade</Link>.
       </p>
 
@@ -100,7 +100,7 @@ export default function TermsPage() {
       <h2>8. Alterações e lei aplicável</h2>
       <p>
         Podemos atualizar estes termos. Mudanças relevantes serão avisadas no app e por e-mail com antecedência. Aplica-se a lei brasileira, e
-        fica eleito o foro de {L.city}, ressalvado o direito do consumidor de ajuizar ação no seu domicílio.
+        fica eleito o foro da comarca de {L.city}, ressalvado o direito do consumidor de ajuizar ação no seu domicílio.
       </p>
 
       <h2>9. Contato</h2>

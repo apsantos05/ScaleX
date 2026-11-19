@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LEGAL } from "@/lib/legal";
+import { LEGAL, LEGAL_IDENTITY } from "@/lib/legal";
 
 export const metadata: Metadata = { title: "Política de Privacidade" };
 
@@ -13,8 +13,7 @@ export default function PrivacyPage() {
 
       <p>
         Esta política explica quais dados pessoais a {L.brand} trata, por que, com quem compartilha e como você exerce seus direitos, conforme a
-        Lei Geral de Proteção de Dados (Lei 13.709/2018, &quot;LGPD&quot;). A controladora dos dados é <strong>{L.company}</strong>, CNPJ{" "}
-        {L.cnpj}, com sede em {L.city}.
+        Lei Geral de Proteção de Dados (Lei 13.709/2018, &quot;LGPD&quot;). O controlador dos dados é <strong>{LEGAL_IDENTITY}</strong>.
       </p>
 
       <h2>1. Dados que coletamos</h2>

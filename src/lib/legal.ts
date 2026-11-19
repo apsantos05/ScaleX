@@ -4,8 +4,13 @@
  * Hoje o controlador é uma pessoa física; quando houver CNPJ, preencha `company` com a razão social e `cnpj`.
  */
 export const LEGAL = {
-  /** Nome do responsável (pessoa física) ou razão social (quando houver CNPJ). */
+  /** Responsável legal (pessoa física) enquanto não houver CNPJ. */
   company: "Arthur Pereira Antunes dos Santos",
+  /**
+   * Razão social prevista para quando o CNPJ for aberto. Só passa a aparecer como empresa
+   * nos documentos depois que `cnpj` for preenchido (antes disso não existe pessoa jurídica).
+   */
+  plannedCompany: "ScaleX",
   /** CNPJ no formato 00.000.000/0000-00. Vazio enquanto a empresa não for aberta. */
   cnpj: "",
   /** Cidade/UF do domicílio ou da sede, usada também no foro. */
@@ -22,8 +27,8 @@ export const LEGAL = {
 
 /** Como o responsável é identificado nos documentos: pessoa jurídica (com CNPJ) ou pessoa física. */
 export const LEGAL_IDENTITY = LEGAL.cnpj
-  ? `${LEGAL.company}, CNPJ ${LEGAL.cnpj}, com sede em ${LEGAL.city}`
-  : `${LEGAL.company}, pessoa física, com domicílio em ${LEGAL.city}`;
+  ? `${LEGAL.plannedCompany}, CNPJ ${LEGAL.cnpj}, com sede em ${LEGAL.city}`
+  : `${LEGAL.company}, pessoa física, com domicílio em ${LEGAL.city}, responsável pela marca ${LEGAL.brand}`;
 
 export const LEGAL_IS_DRAFT = Object.values(LEGAL).some((v) => v.startsWith("[preencher"));
 

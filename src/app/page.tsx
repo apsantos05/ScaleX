@@ -105,7 +105,7 @@ function ProductPreview() {
                 ["Com erro", "3"],
               ].map(([k, v]) => (
                 <div key={k} className="rounded-xl border border-border bg-surface-2 p-3">
-                  <p className="text-[10px] uppercase tracking-wider text-fg-subtle">{k}</p>
+                  <p className="text-[11px] uppercase tracking-wider text-fg-subtle">{k}</p>
                   <p className="mt-1 text-xl font-semibold">{v}</p>
                 </div>
               ))}

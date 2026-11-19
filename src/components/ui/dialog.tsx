@@ -29,11 +29,15 @@ export function Dialog({
         <D.Overlay className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm data-[state=open]:animate-fade-in" />
         <D.Content
           className={cn(
-            "fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100vw-1.5rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain rounded-2xl border border-border bg-surface p-5 shadow-2xl data-[state=open]:animate-rise sm:p-6",
+            // Mobile (< 640px): bottom sheet ancorado na base, ao alcance do polegar e acima da área segura.
+            "fixed inset-x-0 bottom-0 z-50 max-h-[calc(100dvh-1.5rem)] w-full overflow-y-auto overscroll-contain rounded-t-2xl border border-b-0 border-border bg-surface p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl data-[state=open]:animate-sheet-up",
+            // Desktop: diálogo centralizado.
+            "sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[calc(100dvh-2rem)] sm:w-[calc(100vw-1.5rem)] sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:border-b sm:p-6 sm:data-[state=open]:animate-rise",
             className,
           )}
         >
-          <div className="mb-4 pr-8">
+          <div aria-hidden className="mx-auto -mt-2 mb-3 h-1 w-10 rounded-full bg-border-strong sm:hidden" />
+          <div className="mb-4 pr-10">
             <D.Title className="text-base font-semibold">{title}</D.Title>
             {description ? (
               <D.Description className="mt-1 text-sm text-fg-muted">{description}</D.Description>
@@ -42,9 +46,9 @@ export function Dialog({
             )}
           </div>
           {children}
-          {footer && <div className="mt-6 flex justify-end gap-2">{footer}</div>}
+          {footer && <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end max-sm:[&>*]:h-11">{footer}</div>}
           <D.Close asChild>
-            <Button variant="ghost" size="icon-sm" className="absolute right-3 top-3" aria-label="Fechar">
+            <Button variant="ghost" size="icon" className="absolute right-2.5 top-2.5" aria-label="Fechar">
               <X />
             </Button>
           </D.Close>

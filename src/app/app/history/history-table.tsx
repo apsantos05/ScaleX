@@ -9,7 +9,7 @@ import { ConfirmButton } from "@/components/ui/dialog";
 import { Checkbox, Input, Select } from "@/components/ui/form";
 import { Avatar, Card, CardHeader, EmptyState, StatusBadge } from "@/components/ui/primitives";
 import { toast } from "@/components/ui/toast";
-import { ALL_STATUSES, isCancellable, STATUS_LABEL } from "@/lib/domain/status";
+import { ALL_STATUSES, AUDIT_LABEL, FORMAT_LABEL, isCancellable, STATUS_LABEL } from "@/lib/domain/status";
 import type { AuditEntry, TargetView } from "@/lib/domain/types";
 import { formatDateTime } from "@/lib/utils";
 import { cancelTargetsAction } from "../_actions/publishing";
@@ -71,12 +71,12 @@ export function HistoryTable({
           </Select>
           <Select value={format} onChange={(e) => { setFormat(e.target.value); setPage(0); }} aria-label="Formato">
             <option value="">Formato</option>
-            {["FEED", "REELS", "STORIES", "CAROUSEL"].map((f) => <option key={f}>{f}</option>)}
+            {["FEED", "REELS", "STORIES", "CAROUSEL"].map((f) => <option key={f} value={f}>{FORMAT_LABEL[f]}</option>)}
           </Select>
         </div>
 
         {canEdit && selected.size > 0 && (
-          <div className="flex items-center gap-2 border-b border-border bg-brand/5 px-4 py-2.5 text-sm">
+          <div className="z-20 flex flex-wrap items-center gap-2 border-b border-border bg-surface-2/95 px-4 py-2.5 text-sm backdrop-blur animate-fade-in max-md:fixed max-md:inset-x-0 max-md:bottom-[calc(4rem+env(safe-area-inset-bottom))] max-md:border-t max-md:shadow-[0_-12px_30px_-12px_rgb(0_0_0/0.8)] md:sticky md:top-0 md:bg-brand/[0.06]" role="region" aria-label="Ações em lote">
             <span className="font-medium">{selected.size} selecionado(s)</span>
             <span className="text-fg-muted">· {cancellable.length} podem ser cancelados</span>
             <ConfirmButton
@@ -109,14 +109,15 @@ export function HistoryTable({
                 {(open) => (
                   <li className="flex items-start gap-3 px-4 py-3">
                     {canEdit && (
-                      <Checkbox
-                        className="mt-2"
-                        checked={selected.has(t.id)}
-                        aria-label={`Selecionar publicação em @${t.accountUsername}`}
-                        onChange={() => setSelected((s) => { const n = new Set(s); if (n.has(t.id)) n.delete(t.id); else n.add(t.id); return n; })}
-                      />
+                      <label className="-my-1 -ml-2 grid size-11 shrink-0 cursor-pointer place-items-center">
+                        <Checkbox
+                          checked={selected.has(t.id)}
+                          aria-label={`Selecionar publicação em @${t.accountUsername}`}
+                          onChange={() => setSelected((s) => { const n = new Set(s); if (n.has(t.id)) n.delete(t.id); else n.add(t.id); return n; })}
+                        />
+                      </label>
                     )}
-                    <button onClick={open} className="flex min-w-0 flex-1 items-start gap-3 text-left" aria-label={`Abrir detalhes da publicação em @${t.accountUsername}`}>
+                    <button type="button" onClick={open} className="flex min-w-0 flex-1 items-start gap-3 text-left" aria-label={`Abrir detalhes da publicação em @${t.accountUsername}`}>
                       <Avatar src={t.accountAvatarUrl} name={t.accountUsername} size={32} />
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center justify-between gap-2">
@@ -125,7 +126,7 @@ export function HistoryTable({
                         </span>
                         <span className="mt-0.5 block truncate text-xs text-fg-muted">{t.caption || "Sem legenda"}</span>
                         {t.lastError && <span className="block truncate text-xs text-danger">{t.lastError}</span>}
-                        <span className="mt-1 block text-[11px] text-fg-subtle">{t.format} · {formatDateTime(t.scheduledAt)} · {t.attempts}/{t.maxAttempts} tentativas</span>
+                        <span className="mt-1 block text-xs text-fg-subtle">{FORMAT_LABEL[t.format] ?? t.format} · {formatDateTime(t.scheduledAt)} · {t.attempts}/{t.maxAttempts} tentativas</span>
                       </span>
                     </button>
                   </li>
@@ -163,7 +164,7 @@ export function HistoryTable({
                         <td className="px-4 py-2.5">
                           <span className="flex items-center gap-2"><Avatar src={t.accountAvatarUrl} name={t.accountUsername} size={24} />@{t.accountUsername}</span>
                         </td>
-                        <td className="py-2.5 text-xs text-fg-muted">{t.format}</td>
+                        <td className="py-2.5 text-xs text-fg-muted">{FORMAT_LABEL[t.format] ?? t.format}</td>
                         <td className="max-w-xs py-2.5">
                           <p className="truncate text-fg-muted">{t.caption || "—"}</p>
                           {t.lastError && <p className="truncate text-xs text-danger">{t.lastError}</p>}
@@ -171,7 +172,7 @@ export function HistoryTable({
                         <td className="py-2.5 text-xs text-fg-muted">{formatDateTime(t.scheduledAt)}</td>
                         <td className="py-2.5 text-xs tabular-nums text-fg-muted">{t.attempts}/{t.maxAttempts}</td>
                         <td className="py-2.5 pr-4">
-                          <button onClick={(e) => { e.stopPropagation(); open(); }} className="rounded focus-visible:outline-2" aria-label={`Abrir detalhes da publicação em @${t.accountUsername}`}>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); open(); }} className="rounded focus-visible:outline-2" aria-label={`Abrir detalhes da publicação em @${t.accountUsername}`}>
                             <StatusBadge status={t.status} simulated={t.simulated} />
                           </button>
                         </td>
@@ -200,10 +201,22 @@ export function HistoryTable({
         <ul className="divide-y divide-border/60 p-2 text-sm">
           {audit.length === 0 && <li className="p-3 text-fg-muted">Sem registros.</li>}
           {audit.map((a) => (
-            <li key={a.id} className="flex items-center justify-between gap-4 px-3 py-2">
-              <span className="font-mono text-xs">{a.action}</span>
-              <span className="truncate text-xs text-fg-subtle">{a.meta ? JSON.stringify(a.meta) : ""}</span>
-              <span className="shrink-0 text-xs text-fg-muted">{formatDateTime(a.at)}</span>
+            <li key={a.id} className="px-3 py-2.5">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
+                <span className="text-sm">{AUDIT_LABEL[a.action] ?? a.action}</span>
+                <span className="shrink-0 text-xs tabular-nums text-fg-muted">{formatDateTime(a.at)}</span>
+              </div>
+              {/* Detalhe técnico recolhido por padrão (sem JSON cru na tela). */}
+              <details className="group mt-0.5">
+                <summary className="w-fit cursor-pointer list-none text-xs text-fg-subtle hover:text-fg-muted [&::-webkit-details-marker]:hidden">
+                  <span className="group-open:hidden">Detalhes</span>
+                  <span className="hidden group-open:inline">Ocultar detalhes</span>
+                </summary>
+                <p className="mt-1 break-all font-mono text-xs text-fg-subtle">
+                  {a.action}
+                  {a.meta ? ` · ${Object.entries(a.meta).map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : String(v)}`).join(" · ")}` : ""}
+                </p>
+              </details>
             </li>
           ))}
         </ul>

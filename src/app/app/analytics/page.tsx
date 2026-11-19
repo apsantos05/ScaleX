@@ -71,9 +71,9 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/app/an
         title="Analytics"
         description="Métricas operacionais calculadas a partir das execuções registradas."
         actions={
-          <div className="inline-flex rounded-lg border border-border bg-surface p-0.5" role="group" aria-label="Período">
+          <div className="grid w-full grid-cols-3 rounded-lg border border-border bg-surface p-0.5 sm:inline-flex sm:w-auto" role="group" aria-label="Período">
             {PERIODS.map((p) => (
-              <Link key={p} href={`/app/analytics?period=${p}`} aria-current={p === days ? "page" : undefined} className={cn("rounded-md px-3 py-1.5 text-xs", p === days ? "bg-surface-3 text-fg" : "text-fg-muted hover:text-fg")}>
+              <Link key={p} href={`/app/analytics?period=${p}`} aria-current={p === days ? "page" : undefined} className={cn("inline-flex h-8 items-center justify-center rounded-md px-3 text-xs font-medium transition-colors pointer-coarse:h-11", p === days ? "bg-surface-3 text-fg shadow-sm" : "text-fg-muted hover:text-fg")}>
                 {p} dias
               </Link>
             ))}
@@ -86,7 +86,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/app/an
           <StatCard label="Publicações realizadas" value={cur.published} hint={simulated ? `${simulated} simulada(s) em contas demo` : undefined} />
           <div className="mt-1.5 px-1"><Delta now={cur.published} before={prev.published} /></div>
         </div>
-        <StatCard label="Falhas" value={cur.failed} tone="danger" />
+        <StatCard label="Falhas" value={cur.failed} tone="danger" href="/app/history?status=failed" />
         <StatCard label="Taxa de sucesso" value={cur.rate === null ? "—" : `${cur.rate}%`} />
         <StatCard label="Contas ativas no período" value={byAccount.length} />
       </div>
@@ -102,7 +102,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/app/an
         <CardHeader title="Métricas de desempenho (Instagram Insights)" description="Alcance, visualizações e engajamento por publicação" />
         <div className="p-5">
           <Alert tone="info" title="Ainda não disponível nesta versão">
-            A coleta de insights via API oficial (escopo <code className="font-mono">instagram_business_manage_insights</code>) está
+            A coleta de insights via API oficial (escopo <code className="break-all font-mono">instagram_business_manage_insights</code>) está
             implementada no adapter, mas o job de sincronização periódica ainda não foi ativado. Contas demo nunca terão métricas —
             a ScaleX não exibe números estimados ou fictícios. Observação: desde a Graph API v22 a métrica &quot;impressões&quot; foi
             substituída por &quot;visualizações&quot;.
@@ -122,13 +122,13 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/app/an
         <Card>
           <CardHeader title="Desempenho por conta" />
           <div className="overflow-x-auto p-2">
-            <table className="w-full text-sm">
+            <table className="w-full table-fixed text-sm [&_th:first-child]:w-1/2">
               <thead className="text-left text-xs text-fg-subtle"><tr><th className="p-2 font-medium">Conta</th><th className="p-2 font-medium">Publicadas</th><th className="p-2 font-medium">Falhas</th><th className="p-2 font-medium">Total</th></tr></thead>
               <tbody>
                 {byAccount.length === 0 && <tr><td colSpan={4} className="p-4 text-fg-muted">Sem dados no período.</td></tr>}
                 {byAccount.map((a) => (
                   <tr key={a.name} className="border-t border-border/50">
-                    <td className="p-2"><span className="flex items-center gap-2"><Avatar src={a.avatar} name={a.name} size={22} />@{a.name}</span></td>
+                    <td className="max-w-0 p-2"><span className="flex min-w-0 items-center gap-2"><Avatar src={a.avatar} name={a.name} size={22} /><span className="truncate">@{a.name}</span></span></td>
                     <td className="p-2 tabular-nums">{a.published}</td>
                     <td className="p-2 tabular-nums text-fg-muted">{a.failed}</td>
                     <td className="p-2 tabular-nums text-fg-muted">{a.total}</td>
@@ -141,13 +141,13 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/app/an
         <Card>
           <CardHeader title="Desempenho por campanha" />
           <div className="overflow-x-auto p-2">
-            <table className="w-full text-sm">
+            <table className="w-full table-fixed text-sm [&_th:first-child]:w-1/2">
               <thead className="text-left text-xs text-fg-subtle"><tr><th className="p-2 font-medium">Campanha</th><th className="p-2 font-medium">Publicadas</th><th className="p-2 font-medium">Falhas</th><th className="p-2 font-medium">Sucesso</th></tr></thead>
               <tbody>
                 {byCampaign.length === 0 && <tr><td colSpan={4} className="p-4 text-fg-muted">Nenhuma campanha.</td></tr>}
                 {byCampaign.map((c) => (
                   <tr key={c.id} className="border-t border-border/50">
-                    <td className="p-2"><span className="flex items-center gap-2"><span className="size-2 rounded-full" style={{ background: c.color }} />{c.name}</span></td>
+                    <td className="max-w-0 p-2"><span className="flex min-w-0 items-center gap-2"><span className="size-2 shrink-0 rounded-full" style={{ background: c.color }} aria-hidden /><span className="truncate">{c.name}</span></span></td>
                     <td className="p-2 tabular-nums">{c.published}</td>
                     <td className="p-2 tabular-nums text-fg-muted">{c.failed}</td>
                     <td className="p-2 tabular-nums text-fg-muted">{c.rate === null ? "—" : `${c.rate}%`}</td>

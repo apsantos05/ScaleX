@@ -18,15 +18,15 @@ export function CalendarFilters({ accounts, campaigns, statuses }: { accounts: O
   };
   return (
     <div className="grid w-full grid-cols-3 gap-2 sm:flex sm:w-auto">
-      <Select className="h-9 text-xs sm:w-40" value={sp.get("account") ?? ""} onChange={(e) => set("account", e.target.value)} aria-label="Filtrar conta">
+      <Select className="h-9 text-xs pointer-coarse:h-11 sm:w-40" value={sp.get("account") ?? ""} onChange={(e) => set("account", e.target.value)} aria-label="Filtrar conta">
         <option value="">Conta</option>
         {accounts.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
       </Select>
-      <Select className="h-9 text-xs sm:w-40" value={sp.get("campaign") ?? ""} onChange={(e) => set("campaign", e.target.value)} aria-label="Filtrar campanha">
+      <Select className="h-9 text-xs pointer-coarse:h-11 sm:w-40" value={sp.get("campaign") ?? ""} onChange={(e) => set("campaign", e.target.value)} aria-label="Filtrar campanha">
         <option value="">Campanha</option>
         {campaigns.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
       </Select>
-      <Select className="h-9 text-xs sm:w-36" value={sp.get("status") ?? ""} onChange={(e) => set("status", e.target.value)} aria-label="Filtrar status">
+      <Select className="h-9 text-xs pointer-coarse:h-11 sm:w-36" value={sp.get("status") ?? ""} onChange={(e) => set("status", e.target.value)} aria-label="Filtrar status">
         <option value="">Status</option>
         {statuses.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
       </Select>

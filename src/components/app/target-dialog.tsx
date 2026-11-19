@@ -8,7 +8,7 @@ import { ConfirmButton, Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/form";
 import { Alert, Avatar, StatusBadge } from "@/components/ui/primitives";
 import { toast } from "@/components/ui/toast";
-import { isCancellable, isReschedulable } from "@/lib/domain/status";
+import { FORMAT_LABEL, isCancellable, isReschedulable } from "@/lib/domain/status";
 import type { ExecutionLog, TargetView } from "@/lib/domain/types";
 import { cn, formatDateTime } from "@/lib/utils";
 import { cancelTargetsAction, getTargetLogsAction, rescheduleTargetAction } from "@/app/app/_actions/publishing";
@@ -45,7 +45,7 @@ export function TargetDialog({ target, canEdit, children }: { target: TargetView
             <Avatar src={target.accountAvatarUrl} name={target.accountUsername} />
             <div className="flex-1">
               <p className="font-medium">@{target.accountUsername}</p>
-              <p className="text-xs text-fg-subtle">{target.format} · agendado para {formatDateTime(target.scheduledAt)}</p>
+              <p className="text-xs text-fg-subtle">{FORMAT_LABEL[target.format] ?? target.format} · agendado para {formatDateTime(target.scheduledAt)}</p>
             </div>
             <StatusBadge status={target.status} simulated={target.simulated} />
           </div>
@@ -65,7 +65,7 @@ export function TargetDialog({ target, canEdit, children }: { target: TargetView
 
           <div>
             <p className="mb-2 text-xs font-medium text-fg-muted">Log de execução</p>
-            <ol className="max-h-48 space-y-1.5 overflow-y-auto rounded-lg border border-border p-3 font-mono text-[11px]">
+            <ol className="max-h-48 space-y-1.5 overflow-y-auto rounded-lg border border-border p-3 font-mono text-xs">
               {logs === null ? (
                 <li className="text-fg-subtle">Carregando…</li>
               ) : logs.length === 0 ? (

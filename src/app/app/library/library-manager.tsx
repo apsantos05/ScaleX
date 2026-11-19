@@ -99,16 +99,17 @@ export function LibraryManager({
 
   return (
     <>
-      <div role="tablist" aria-label="Seções da biblioteca" className="mb-4 inline-flex rounded-lg border border-border bg-surface p-1">
+      <div role="tablist" aria-label="Seções da biblioteca" className="mb-4 flex w-full rounded-lg border border-border bg-surface p-1 sm:inline-flex sm:w-auto">
         {(["media", "captions"] as const).map((t) => (
           <button
             key={t}
+            type="button"
             role="tab"
             aria-selected={tab === t}
             onClick={() => setTab(t)}
-            className={cn("rounded-md px-3 py-1.5 text-sm", tab === t ? "bg-surface-3 text-fg" : "text-fg-muted hover:text-fg")}
+            className={cn("h-9 flex-1 rounded-md px-3 text-sm font-medium transition-colors pointer-coarse:h-11 sm:flex-none", tab === t ? "bg-surface-3 text-fg shadow-sm" : "text-fg-muted hover:text-fg")}
           >
-            {t === "media" ? `Mídias (${media.length})` : `Legendas reutilizáveis (${captions.length})`}
+            {t === "media" ? `Mídias (${media.length})` : <>Legendas<span className="max-sm:hidden"> reutilizáveis</span> ({captions.length})</>}
           </button>
         ))}
       </div>
@@ -135,12 +136,10 @@ export function LibraryManager({
               )}
             >
               <Upload className="size-5 text-fg-muted" aria-hidden />
-              <p className="text-sm">
-                Arraste arquivos ou{" "}
-                <button className="font-medium text-brand hover:underline" onClick={() => inputRef.current?.click()}>
-                  selecione do computador
-                </button>
-              </p>
+              <p className="text-sm pointer-coarse:hidden">Arraste arquivos para cá ou</p>
+              <Button variant="secondary" onClick={() => inputRef.current?.click()}>
+                <ImagePlus /> Selecionar arquivos
+              </Button>
               <p className="text-xs text-fg-subtle">JPEG, PNG, WebP (até 8 MB) · MP4, MOV (até 300 MB). Para o Instagram, imagens precisam ser JPEG.</p>
               <input ref={inputRef} type="file" multiple accept={ACCEPT} className="hidden" onChange={(e) => e.target.files && handleFiles(e.target.files)} />
               {uploads.length > 0 && (
@@ -187,7 +186,11 @@ export function LibraryManager({
             </div>
 
             {selected.size > 0 && canEdit && (
-              <div className="flex flex-wrap items-center gap-2 border-b border-border bg-brand/5 px-4 py-2.5" role="region" aria-label="Ações em lote">
+              <div
+                className="z-20 flex flex-wrap items-center gap-2 border-b border-border bg-surface-2/95 px-4 py-2.5 backdrop-blur animate-fade-in max-md:fixed max-md:inset-x-0 max-md:bottom-[calc(4rem+env(safe-area-inset-bottom))] max-md:border-t max-md:shadow-[0_-12px_30px_-12px_rgb(0_0_0/0.8)] md:sticky md:top-0 md:bg-brand/[0.06]"
+                role="region"
+                aria-label="Ações em lote"
+              >
                 <span className="mr-2 text-sm font-medium">{selected.size} selecionada(s)</span>
                 <Button size="sm" variant="secondary" disabled={pending} onClick={() => act(updateMediaAction(ids, { rightsConfirmed: true }), "Direitos de uso confirmados.")}>
                   <ShieldCheck /> Confirmar direitos
@@ -231,10 +234,11 @@ export function LibraryManager({
                   const isSel = selected.has(m.id);
                   return (
                     <li key={m.id} className={cn("group relative overflow-hidden rounded-xl border bg-surface-2 transition-colors", isSel ? "border-brand" : "border-border hover:border-border-strong")}>
-                      <button className="block aspect-square w-full" onClick={() => setPreview(m)} aria-label={`Visualizar ${m.fileName}`}>
+                      <button type="button" className="block aspect-square w-full" onClick={() => setPreview(m)} aria-label={`Visualizar ${m.fileName}`}>
                         <MediaThumb media={m} url={urls[m.id]} className="size-full" />
                       </button>
-                      <label className={cn("absolute left-2 top-2 rounded-md bg-black/60 p-1 transition-opacity", isSel ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-within:opacity-100")}>
+                      {/* Em telas de toque não existe hover: a caixa de seleção fica sempre visível e com área ≥44 px. */}
+                      <label className={cn("absolute left-1.5 top-1.5 grid cursor-pointer place-items-center rounded-md bg-black/65 p-1.5 transition-opacity pointer-coarse:size-11 pointer-coarse:opacity-100", isSel ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-within:opacity-100")}>
                         <Checkbox
                           checked={isSel}
                           onChange={() =>
@@ -251,11 +255,11 @@ export function LibraryManager({
                       {m.rightsConfirmed ? (
                         <CheckCircle2 className="absolute right-2 top-2 size-4 text-success drop-shadow" aria-label="Direitos confirmados" />
                       ) : (
-                        <Badge tone="warning" className="absolute right-2 top-2">Direitos?</Badge>
+                        <Badge tone="warning" className="absolute right-2 top-2" title="Direitos de uso ainda não confirmados">Direitos?</Badge>
                       )}
                       <div className="p-2">
                         <p className="truncate text-xs font-medium">{m.fileName}</p>
-                        <p className="text-[11px] text-fg-subtle">
+                        <p className="truncate text-xs text-fg-subtle">
                           {formatBytes(m.sizeBytes)}
                           {m.width && m.height ? ` · ${m.width}×${m.height}` : ""}
                           {m.durationSec ? ` · ${Math.round(m.durationSec)}s` : ""}

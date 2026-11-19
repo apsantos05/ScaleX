@@ -1,12 +1,13 @@
 "use client";
 
-import { FolderInput, RefreshCw, Search, Tag, Trash2, Unplug, Users } from "lucide-react";
+import { FolderInput, RefreshCw, Search, Tag, Trash2, Unplug, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { ConfirmButton, Dialog } from "@/components/ui/dialog";
 import { Checkbox, Field, Input, Select } from "@/components/ui/form";
 import { AccountStatusBadge, Avatar, Badge, Card, EmptyState } from "@/components/ui/primitives";
+import { SortableTh, type SortState } from "@/components/ui/table";
 import { toast } from "@/components/ui/toast";
 import { parseTags } from "@/lib/domain/schemas";
 import type { SocialAccount } from "@/lib/domain/types";
@@ -14,6 +15,8 @@ import { formatNumber, formatRelative } from "@/lib/utils";
 import { disconnectAccountsAction, organizeAccountsAction, syncAccountsAction } from "../_actions/accounts";
 
 type Mode = "set-group" | "add-tags" | "remove-tags" | "clear-tags";
+type SortKey = "username" | "followers" | "synced" | "status";
+const STATUS_ORDER: Record<string, number> = { error: 0, needs_reauth: 1, disconnected: 2, active: 3 };
 
 export function AccountsManager({
   accounts,
@@ -35,6 +38,15 @@ export function AccountsManager({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [organize, setOrganize] = useState<Mode | null>(null);
   const [organizeValue, setOrganizeValue] = useState("");
+  const [sort, setSort] = useState<SortState<SortKey>>({ key: "status", dir: 1 });
+  const activeFilters = [q.trim(), status, group, tag].filter(Boolean).length;
+  const clearFilters = () => {
+    setQ("");
+    setStatus("");
+    setGroup("");
+    setTag("");
+  };
+  const sortBy = (key: SortKey) => setSort((s) => ({ key, dir: s.key === key ? (s.dir === 1 ? -1 : 1) : key === "followers" || key === "synced" ? -1 : 1 }));
 
   const groups = useMemo(() => Array.from(new Set(accounts.map((a) => a.group).filter(Boolean))) as string[], [accounts]);
   const tags = useMemo(() => Array.from(new Set(accounts.flatMap((a) => a.tags))).sort(), [accounts]);
@@ -49,6 +61,17 @@ export function AccountsManager({
         (!tag || a.tags.includes(tag)),
     );
   }, [accounts, q, status, group, tag]);
+
+  // Ordenação estável; padrão: contas com problema primeiro (o que exige atenção aparece no topo).
+  const sorted = useMemo(() => {
+    const val = (a: SocialAccount): string | number =>
+      sort.key === "username" ? a.username.toLowerCase() : sort.key === "followers" ? (a.followersCount ?? -1) : sort.key === "synced" ? (a.lastSyncedAt ?? "") : (STATUS_ORDER[a.status] ?? 9);
+    return [...filtered].sort((x, y) => {
+      const a = val(x);
+      const b = val(y);
+      return (a < b ? -1 : a > b ? 1 : x.username.localeCompare(y.username)) * sort.dir;
+    });
+  }, [filtered, sort]);
 
   const allVisibleSelected = filtered.length > 0 && filtered.every((a) => selected.has(a.id));
   const someSelected = filtered.some((a) => selected.has(a.id));
@@ -123,9 +146,23 @@ export function AccountsManager({
           </Select>
         </div>
       </div>
+      <div className="flex min-h-10 items-center gap-3 border-b border-border/60 px-4 py-2 text-xs text-fg-muted" aria-live="polite">
+        <span>
+          {filtered.length === accounts.length ? `${accounts.length} conta(s)` : `${filtered.length} de ${accounts.length} conta(s)`}
+        </span>
+        {activeFilters > 0 && (
+          <Button variant="ghost" size="sm" className="-my-1 h-7" onClick={clearFilters}>
+            <X /> Limpar filtros ({activeFilters})
+          </Button>
+        )}
+      </div>
 
       {selected.size > 0 && (
-        <div className="flex flex-wrap items-center gap-2 border-b border-border bg-brand/5 px-4 py-2.5 animate-fade-in" role="region" aria-label="Ações em lote">
+        <div
+          className="z-20 flex flex-wrap items-center gap-2 border-b border-border bg-surface-2/95 px-4 py-2.5 backdrop-blur animate-fade-in max-md:fixed max-md:inset-x-0 max-md:bottom-[calc(4rem+env(safe-area-inset-bottom))] max-md:border-t max-md:shadow-[0_-12px_30px_-12px_rgb(0_0_0/0.8)] md:sticky md:top-0 md:bg-brand/[0.06]"
+          role="region"
+          aria-label="Ações em lote"
+        >
           <span className="mr-2 text-sm font-medium">
             {selected.size} selecionada{selected.size > 1 ? "s" : ""}
           </span>
@@ -168,14 +205,16 @@ export function AccountsManager({
       )}
 
       {filtered.length > 0 && (
-        <label className="flex items-center gap-3 border-b border-border/60 px-4 py-2.5 text-xs text-fg-muted md:hidden">
+        <label className="flex min-h-11 cursor-pointer items-center gap-3 border-b border-border/60 px-4 py-2.5 text-sm text-fg-muted md:hidden">
           <Checkbox checked={allVisibleSelected} onChange={toggleAllVisible} />
           Selecionar todas ({filtered.length})
         </label>
       )}
       <ul className="divide-y divide-border/60 md:hidden">
-        {filtered.map((a) => (
-          <li key={a.id} className="flex items-start gap-3 px-4 py-3 has-[:checked]:bg-brand/[0.04]">
+        {sorted.map((a) => (
+          // A linha inteira é o alvo de toque da seleção (label envolve o checkbox).
+          <li key={a.id} className="has-[:checked]:bg-brand/[0.05]">
+            <label className="flex cursor-pointer items-start gap-3 px-4 py-3 active:bg-surface-2/60">
             <Checkbox className="mt-2.5" checked={selected.has(a.id)} onChange={() => toggle(a.id)} aria-label={`Selecionar @${a.username}`} />
             <Avatar src={a.avatarUrl} name={a.username} size={36} />
             <div className="min-w-0 flex-1">
@@ -192,6 +231,7 @@ export function AccountsManager({
                 ))}
               </div>
             </div>
+            </label>
           </li>
         ))}
       </ul>
@@ -210,16 +250,16 @@ export function AccountsManager({
                   onChange={toggleAllVisible}
                 />
               </th>
-              <th className="py-2.5 font-medium">Conta</th>
-              <th className="py-2.5 font-medium">Status</th>
+              <SortableTh sort={sort} onSort={sortBy} k="username">Conta</SortableTh>
+              <SortableTh sort={sort} onSort={sortBy} k="status">Status</SortableTh>
               <th className="py-2.5 font-medium">Grupo / etiquetas</th>
-              <th className="py-2.5 font-medium">Seguidores</th>
-              <th className="py-2.5 font-medium">Última sincronização</th>
+              <SortableTh sort={sort} onSort={sortBy} k="followers">Seguidores</SortableTh>
+              <SortableTh sort={sort} onSort={sortBy} k="synced">Última sincronização</SortableTh>
               <th className="py-2.5 pr-4 font-medium">Permissões</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((a) => (
+            {sorted.map((a) => (
               <tr key={a.id} className="border-b border-border/50 transition-colors last:border-0 hover:bg-surface-2/50 has-[:checked]:bg-brand/[0.04]">
                 <td className="px-4 py-3">
                   <Checkbox checked={selected.has(a.id)} onChange={() => toggle(a.id)} aria-label={`Selecionar @${a.username}`} />
@@ -242,7 +282,7 @@ export function AccountsManager({
                 <td className="py-3">
                   <AccountStatusBadge status={a.status} />
                   {a.tokenExpiresAt && Date.parse(a.tokenExpiresAt) - new Date().getTime() < 7 * 86_400_000 && (
-                    <p className="mt-1 text-[11px] text-warning">Token expira {formatRelative(a.tokenExpiresAt)}</p>
+                    <p className="mt-1 text-xs text-warning">Token expira {formatRelative(a.tokenExpiresAt)}</p>
                   )}
                 </td>
                 <td className="py-3">

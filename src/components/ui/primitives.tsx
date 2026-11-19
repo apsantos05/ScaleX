@@ -6,7 +6,7 @@ import type { AccountStatus, TargetStatus } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
 
 export function Card({ className, ...props }: ComponentProps<"div">) {
-  return <div className={cn("rounded-[var(--radius-card)] border border-border/70 bg-surface", className)} {...props} />;
+  return <div className={cn("rounded-[var(--radius-card)] border border-border/80 bg-surface shadow-[0_1px_0_rgb(255_255_255/0.025)_inset]", className)} {...props} />;
 }
 
 export function CardHeader({
@@ -45,7 +45,7 @@ export function Badge({ tone = "neutral", className, ...props }: ComponentProps<
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium leading-none whitespace-nowrap",
+        "inline-flex items-center gap-1 rounded-md border px-1.5 py-1 text-xs font-medium leading-none whitespace-nowrap",
         TONES[tone],
         className,
       )}
@@ -147,20 +147,29 @@ export function PageHeader({
   title,
   description,
   actions,
+  eyebrow,
 }: {
   title: string;
   description?: ReactNode;
   actions?: ReactNode;
+  /** Rótulo curto acima do título (seção/contexto), ex.: "Operação". */
+  eyebrow?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{title}</h1>
-        {description && <p className="mt-1 text-sm text-fg-muted">{description}</p>}
+    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between lg:mb-8">
+      <div className="min-w-0">
+        {eyebrow && <p className="mb-1.5 font-mono text-xs uppercase tracking-[0.16em] text-fg-subtle">{eyebrow}</p>}
+        <h1 className="text-balance text-2xl font-semibold tracking-tight lg:text-[1.75rem]">{title}</h1>
+        {description && <p className="mt-1.5 max-w-2xl text-sm text-fg-muted">{description}</p>}
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      {actions && <div className="flex flex-wrap items-center gap-2 max-sm:[&>*]:flex-1">{actions}</div>}
     </div>
   );
+}
+
+/** Bloco de carregamento com shimmer (respeita prefers-reduced-motion). */
+export function Skeleton({ className, ...props }: ComponentProps<"div">) {
+  return <div aria-hidden className={cn("skeleton rounded-md", className)} {...props} />;
 }
 
 export function Avatar({ src, name, size = 32 }: { src: string | null; name: string; size?: number }) {
@@ -200,7 +209,7 @@ export function Avatar({ src, name, size = 32 }: { src: string | null; name: str
 
 export function Kbd({ children }: { children: ReactNode }) {
   return (
-    <kbd className="rounded border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-fg-muted">
+    <kbd className="rounded border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-[11px] text-fg-muted">
       {children}
     </kbd>
   );

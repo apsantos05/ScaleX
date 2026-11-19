@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     "Central de operações para conectar contas profissionais do Instagram, organizar conteúdo e programar publicações em lote com integrações oficiais.",
 };
 
-export const viewport: Viewport = { themeColor: "#09090B", colorScheme: "dark" };
+export const viewport: Viewport = { themeColor: "#09090B", colorScheme: "dark", viewportFit: "cover" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

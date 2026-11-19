@@ -58,3 +58,24 @@ export const ALL_STATUSES: TargetStatus[] = [
   "failed",
   "cancelled",
 ];
+
+/** Rótulos legíveis dos formatos de publicação (UI). */
+export const FORMAT_LABEL: Record<string, string> = { FEED: "Feed", REELS: "Reels", STORIES: "Story", CAROUSEL: "Carrossel" };
+
+/** Frases legíveis para o registro de auditoria (o código técnico continua disponível no detalhe). */
+export const AUDIT_LABEL: Record<string, string> = {
+  "account.connected": "Conectou conta(s)",
+  "account.disconnected": "Desconectou conta(s)",
+  "media.deleted": "Excluiu mídia(s)",
+  "member.invite_revoked": "Revogou um convite",
+  "member.invited": "Convidou um membro",
+  "member.joined": "Novo membro entrou",
+  "member.removed": "Removeu um membro",
+  "member.role_changed": "Alterou o papel de um membro",
+  "publication.scheduled": "Agendou publicação",
+  "target.cancelled": "Cancelou publicação(ões)",
+  "target.rescheduled": "Reagendou publicação",
+  "workspace.created": "Criou o workspace",
+  "workspace.exported": "Exportou os dados do workspace",
+  "workspace.updated": "Atualizou o workspace",
+};

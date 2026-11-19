@@ -1,6 +1,6 @@
 # ScaleX — PROJECT_STATUS
 
-_Atualizado em 19/11/2026 · Fase 1 (fundação do MVP) + Supabase conectado + Rodada 1 da Auditoria Mestre (cron em produção, convites de membros)_
+_Atualizado em 19/11/2026 · Fase 1 (fundação do MVP) + Supabase conectado + Rodada 1 da Auditoria Mestre (cron em produção, convites de membros) + Visual Atelier 2.0 (branch `feat/visual-atelier-2`, não publicada)_
 
 Legenda: ✅ concluído e verificado · 🟡 parcial · 🧪 simulado (modo demo) · ⏳ pendente
 
@@ -23,6 +23,7 @@ Legenda: ✅ concluído e verificado · 🟡 parcial · 🧪 simulado (modo demo
 | Motor de jobs | Agendador e executor separados, lease, recuperação, 1 job/conta, backoff, erros classificados, limite diário, reuso de container, renovação de token | 12 testes do motor + worker executado no modo demo **e contra o Supabase** (6/6 simuladas publicadas, logs gravados) |
 | Segurança | Tokens AES-256-GCM, state OAuth assinado + nonce, cookies httpOnly, headers de segurança, `redact` nos logs, autorização por papel no servidor, isolamento por workspace | Testes de segurança e isolamento |
 | LGPD | Exportação JSON do workspace (proprietário), sem credenciais | Rota implementada |
+| Visual Atelier 2.0 (branch) | Tokens com contraste AA (texto secundário, botão primário #E0142C, borda de campo), área de toque ≥44 px em telas de toque, diálogos como bottom sheet no celular, barra lateral recolhível (cookie), gaveta móvel com foco preso, dashboard com hierarquia (crítico → estado → indicadores clicáveis), Estúdio com rascunho automático + confirmação antes de agendar + progresso, ordenação em Contas, minicalendário móvel, auditoria legível. Detalhes em `docs/AUDITORIA-VISUAL-ATELIER-2-0.md` | lint/typecheck/37 testes/build verdes; medição no navegador: 0 overflow em 320 px e 0 textos < 12 px nas 10 páginas do app; 1 alvo < 44 px por página (skip-link) em 375 px |
 | Motor em produção (cron) | Migração `20261119010000_publish_cron.sql`: `pg_cron` chama `GET /api/cron/tick` da Vercel **a cada minuto** via `pg_net`, com URL e `CRON_SECRET` guardados no **Vault** do Supabase (função `trigger_publish_tick`, sem acesso para anon/authenticated) | Job `scalex-publish-tick` ativo; execuções `succeeded`; respostas HTTP 200 `{"promoted":0,"results":[]}` |
 | Membros e convites | Convite por link (token de 32 bytes, só o hash SHA-256 no banco, validade 7 dias, 1 convite ativo por e-mail, conta no limite do plano), revogação, aceite só com o **mesmo e-mail** convidado, troca de papel e remoção com regras (não altera a si mesmo, admin não mexe em proprietário, protege o último proprietário). Migração `20261119020000_invitations.sql` com funções `security definer`; tela em Configurações › Membros; página `/convite/[token]` | 9 testes unitários + **33/33** em `verify:supabase` (13 novas checagens) + fluxo no navegador: dono convida → convidado entra com outro e-mail (bloqueado) → sai, entra com o e-mail certo → aceita → cai no workspace como **Editor** |
 

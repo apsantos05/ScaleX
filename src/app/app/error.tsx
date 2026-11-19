@@ -21,7 +21,7 @@ export default function AppError({ error, reset }: { error: Error & { digest?: s
       <p className="mt-2 text-sm text-fg-muted">
         Pode ser uma instabilidade momentânea de conexão com o servidor. Seus dados estão seguros.
       </p>
-      {error.digest && <p className="mt-2 font-mono text-[11px] text-fg-subtle">Código: {error.digest}</p>}
+      {error.digest && <p className="mt-2 font-mono text-xs text-fg-subtle">Código: {error.digest}</p>}
       <div className="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
         <Button onClick={reset}>
           <RotateCcw /> Tentar novamente

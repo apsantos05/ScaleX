@@ -47,7 +47,7 @@ export function CampaignsManager({ campaigns, stats, canEdit, canDelete }: { cam
               <legend className="mb-2 text-sm font-medium">Cor</legend>
               <div className="flex gap-2">
                 {COLORS.map((c) => (
-                  <button type="button" key={c} onClick={() => setColor(c)} aria-label={`Cor ${c}`} aria-pressed={color === c} className="size-7 rounded-full ring-offset-2 ring-offset-surface transition aria-pressed:ring-2 aria-pressed:ring-fg" style={{ background: c }} />
+                  <button type="button" key={c} onClick={() => setColor(c)} aria-label={`Cor ${c}`} aria-pressed={color === c} className="touch-hit size-7 rounded-full ring-offset-2 ring-offset-surface transition aria-pressed:ring-2 aria-pressed:ring-fg" style={{ background: c }} />
                 ))}
               </div>
             </fieldset>
@@ -86,13 +86,13 @@ export function CampaignsManager({ campaigns, stats, canEdit, canDelete }: { cam
                 {[["Total", s.total], ["Publicadas", s.published], ["Pendentes", s.pending], ["Falhas", s.failed]].map(([k, v]) => (
                   <div key={k} className="rounded-lg bg-surface-2 py-2">
                     <dd className="text-lg font-semibold tabular-nums">{v}</dd>
-                    <dt className="text-[10px] text-fg-subtle">{k}</dt>
+                    <dt className="text-xs text-fg-subtle">{k}</dt>
                   </div>
                 ))}
               </dl>
               <div className="mt-4 flex items-center justify-between text-xs text-fg-muted">
                 <span>{s.accounts} conta(s) envolvidas</span>
-                <Link href={`/app/calendar?campaign=${c.id}`} className="inline-flex items-center gap-1 hover:text-fg"><CalendarDays className="size-3.5" /> Calendário</Link>
+                <Link href={`/app/calendar?campaign=${c.id}`} className="touch-hit inline-flex items-center gap-1 hover:text-fg"><CalendarDays className="size-3.5" /> Calendário</Link>
               </div>
             </Card>
           );

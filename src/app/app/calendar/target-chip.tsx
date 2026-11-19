@@ -2,6 +2,7 @@
 
 import { TargetDialog } from "@/components/app/target-dialog";
 import { StatusBadge } from "@/components/ui/primitives";
+import { STATUS_LABEL } from "@/lib/domain/status";
 import type { TargetView } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
 
@@ -21,14 +22,15 @@ export function TargetChip({ target, color, canEdit, compact }: { target: Target
     <TargetDialog target={target} canEdit={canEdit}>
       {(open) => (
         <button
+          type="button"
           onClick={open}
           className={cn(
             "flex w-full items-center gap-1.5 rounded-md border border-border/60 bg-surface-2 text-left transition-colors hover:border-border-strong",
-            compact ? "px-1.5 py-1 text-[11px]" : "px-2.5 py-2 text-xs",
+            compact ? "px-1.5 py-1 text-xs" : "min-h-10 px-2.5 py-2 text-xs pointer-coarse:min-h-11",
             target.status === "cancelled" && "opacity-50 line-through",
           )}
           style={color ? { borderLeft: `3px solid ${color}` } : undefined}
-          aria-label={`@${target.accountUsername} às ${time}, ${target.status}`}
+          aria-label={`@${target.accountUsername} às ${time}, ${target.simulated && target.status === "published" ? "simulado" : STATUS_LABEL[target.status]}`}
         >
           <span className={cn("size-1.5 shrink-0 rounded-full", DOT[target.status])} aria-hidden />
           <span className="text-fg-subtle tabular-nums">{time}</span>

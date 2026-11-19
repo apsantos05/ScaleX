@@ -1,3 +1,4 @@
+import { BladeMark } from "@/components/brand/mark";
 import { AlertTriangle, CheckCircle2, Info, XCircle, type LucideIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import { STATUS_LABEL } from "@/lib/domain/status";
@@ -205,14 +206,11 @@ export function Kbd({ children }: { children: ReactNode }) {
   );
 }
 
-export function Logo({ className }: { className?: string }) {
+export function Logo({ className, markSize = 26 }: { className?: string; markSize?: number }) {
   return (
-    <span className={cn("inline-flex items-center gap-2 font-semibold tracking-tight", className)}>
-      <svg viewBox="0 0 24 24" className="size-6" aria-hidden>
-        <rect width="24" height="24" rx="6" fill="#FF3045" />
-        <path d="M7 7l10 10M17 7l-3.5 3.5M10.5 13.5L7 17" stroke="white" strokeWidth="2.4" strokeLinecap="round" />
-      </svg>
-      <span>
+    <span className={cn("inline-flex items-center gap-2.5 font-semibold", className)}>
+      <BladeMark size={markSize} />
+      <span className="text-[0.95em] uppercase tracking-[0.08em]">
         Scale<span className="text-brand">X</span>
       </span>
     </span>

@@ -1,12 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/toast";
+import { appUrl } from "@/lib/env";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(appUrl()),
+  applicationName: "ScaleX",
   title: { default: "ScaleX — Operações de marketing orgânico em escala", template: "%s · ScaleX" },
   description:
     "Central de operações para conectar contas profissionais do Instagram, organizar conteúdo e programar publicações em lote com integrações oficiais.",

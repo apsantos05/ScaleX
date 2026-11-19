@@ -318,24 +318,38 @@ export class GraphInstagramAdapter implements InstagramAdapter {
     }
   }
 
-  async getMediaInsights(accessToken: string, mediaId: string): Promise<MediaInsights> {
-    // "impressions" foi substituída por "views" (Graph API v22+, abr/2025).
-    const r = await this.call<{ data: { name: string; values?: { value: number }[]; total_value?: { value: number } }[] }>(
-      "GET",
-      `/${mediaId}/insights`,
-      { metric: "reach,views,likes,comments,saved,shares", access_token: accessToken },
-    );
+  /**
+   * Métricas por publicação. Desde a Graph API v22 "impressions" virou "views".
+   * Stories não têm curtidas/salvamentos pela API: usam um conjunto menor de métricas.
+   * Se uma métrica não existir para o tipo de mídia (erro 100), tenta o conjunto mínimo.
+   */
+  async getMediaInsights(accessToken: string, mediaId: string, format?: string): Promise<MediaInsights> {
+    const full = format === "STORIES" ? "reach,views,shares" : "reach,views,likes,comments,saved,shares";
+    const fetchMetrics = (metric: string) =>
+      this.call<{ data: { name: string; values?: { value: number }[]; total_value?: { value: number } }[] }>("GET", `/${mediaId}/insights`, {
+        metric,
+        access_token: accessToken,
+      });
+    let r;
+    try {
+      r = await fetchMetrics(full);
+    } catch (err) {
+      if (err instanceof ProviderError && err.code === 100) r = await fetchMetrics("reach,views");
+      else throw err;
+    }
     const get = (n: string) => {
       const m = r.data.find((x) => x.name === n);
       return m?.total_value?.value ?? m?.values?.[0]?.value ?? null;
     };
-    return {
-      reach: get("reach"),
-      views: get("views"),
-      likes: get("likes"),
-      comments: get("comments"),
-      saved: get("saved"),
-      shares: get("shares"),
-    };
+    return { reach: get("reach"), views: get("views"), likes: get("likes"), comments: get("comments"), saved: get("saved"), shares: get("shares") };
   }
+
+  async getMediaBasic(accessToken: string, mediaId: string) {
+    const r = await this.call<{ like_count?: number; comments_count?: number }>("GET", `/${mediaId}`, {
+      fields: "like_count,comments_count",
+      access_token: accessToken,
+    });
+    return { likes: r.like_count ?? null, comments: r.comments_count ?? null };
+  }
+
 }

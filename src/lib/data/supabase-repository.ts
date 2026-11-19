@@ -14,8 +14,7 @@ import type {
   Role,
   SocialAccount,
   TargetView,
-  Workspace,
-} from "@/lib/domain/types";
+  Workspace, MediaInsightRow, AccountSnapshot } from "@/lib/domain/types";
 import { slugify } from "./demo-repository";
 import type {
   MediaFilter,
@@ -280,6 +279,18 @@ export class SupabaseWorkspaceRepository implements WorkspaceRepository {
   async storageUsedBytes(workspaceId: ID) {
     const rows = check(await this.db.from("media_assets").select("size_bytes").eq("workspace_id", workspaceId));
     return (rows as { size_bytes: number }[]).reduce((s, r) => s + Number(r.size_bytes), 0);
+  }
+
+  async listMediaInsights(workspaceId: ID) {
+    const rows = check(await this.db.from("media_insights").select("*").eq("workspace_id", workspaceId)) as Row[];
+    return rows.map((r) => fromRow<MediaInsightRow>(r));
+  }
+
+  async listAccountSnapshots(workspaceId: ID, sinceDay: string) {
+    const rows = check(
+      await this.db.from("account_snapshots").select("social_account_id, day, followers_count").eq("workspace_id", workspaceId).gte("day", sinceDay).order("day"),
+    ) as Row[];
+    return rows.map((r) => fromRow<AccountSnapshot>(r));
   }
 
   async listCaptions(workspaceId: ID) {

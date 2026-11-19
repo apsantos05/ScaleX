@@ -52,5 +52,8 @@ export interface InstagramAdapter {
   /** Quota oficial restante (content_publishing_limit). null se indisponível. */
   getPublishingQuota(accessToken: string, igUserId: string): Promise<{ used: number; total: number } | null>;
   refreshToken(accessToken: string): Promise<{ accessToken: string; expiresInSec: number }>;
-  getMediaInsights(accessToken: string, mediaId: string): Promise<MediaInsights>;
+  /** Métricas completas (exige a permissão de insights). Stories e Reels aceitam conjuntos diferentes de métricas. */
+  getMediaInsights(accessToken: string, mediaId: string, format?: PublishFormat): Promise<MediaInsights>;
+  /** Curtidas e comentários (disponíveis só com a permissão básica). */
+  getMediaBasic(accessToken: string, mediaId: string): Promise<{ likes: number | null; comments: number | null }>;
 }

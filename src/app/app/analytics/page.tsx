@@ -1,11 +1,12 @@
-import { ArrowDownRight, ArrowUpRight, Info } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { dayBuckets, dayKey, StackedBars, StatCard } from "@/components/app/charts";
-import { Alert, Avatar, Card, CardHeader, PageHeader } from "@/components/ui/primitives";
+import { Avatar, Card, CardHeader, PageHeader } from "@/components/ui/primitives";
 import { requireWorkspace } from "@/lib/auth/context";
 import type { TargetView } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
+import { InstagramMetrics } from "./instagram-metrics";
 
 export const metadata: Metadata = { title: "Analytics" };
 
@@ -28,8 +29,6 @@ function Delta({ now, before }: { now: number; before: number }) {
   );
 }
 
-const UNAVAILABLE = ["Alcance", "Visualizações", "Curtidas", "Comentários", "Salvamentos", "Compartilhamentos"];
-
 export default async function AnalyticsPage({ searchParams }: PageProps<"/app/analytics">) {
   const { repo, workspace } = await requireWorkspace();
   const sp = await searchParams;
@@ -37,7 +36,14 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/app/an
   const now = new Date().getTime();
   const from = new Date(now - days * 86_400_000).toISOString();
   const prevFrom = new Date(now - 2 * days * 86_400_000).toISOString();
-  const [all, campaigns] = await Promise.all([repo.listTargets(workspace.id, { from: prevFrom }), repo.listCampaigns(workspace.id)]);
+  const sinceDay = new Date(now - days * 86_400_000).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  const [all, campaigns, accounts, insights, snapshots] = await Promise.all([
+    repo.listTargets(workspace.id, { from: prevFrom }),
+    repo.listCampaigns(workspace.id),
+    repo.listAccounts(workspace.id),
+    repo.listMediaInsights(workspace.id),
+    repo.listAccountSnapshots(workspace.id, sinceDay),
+  ]);
   const current = all.filter((t) => t.scheduledAt >= from && t.scheduledAt <= new Date(now).toISOString());
   const previous = all.filter((t) => t.scheduledAt < from);
   const cur = summarize(current);
@@ -69,7 +75,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/app/an
     <>
       <PageHeader
         title="Analytics"
-        description="Métricas operacionais calculadas a partir das execuções registradas."
+        description="Execuções da ScaleX e métricas oficiais do Instagram (atualizadas a cada hora)."
         actions={
           <div className="grid w-full grid-cols-3 rounded-lg border border-border bg-surface p-0.5 sm:inline-flex sm:w-auto" role="group" aria-label="Período">
             {PERIODS.map((p) => (
@@ -98,25 +104,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/app/an
         </div>
       </Card>
 
-      <Card className="mt-6">
-        <CardHeader title="Métricas de desempenho (Instagram Insights)" description="Alcance, visualizações e engajamento por publicação" />
-        <div className="p-5">
-          <Alert tone="info" title="Ainda não disponível nesta versão">
-            A coleta de insights via API oficial (permissão de insights do Instagram) está
-            implementada no adapter, mas o job de sincronização periódica ainda não foi ativado. Contas demo nunca terão métricas —
-            a ScaleX não exibe números estimados ou fictícios. Observação: desde a Graph API v22 a métrica &quot;impressões&quot; foi
-            substituída por &quot;visualizações&quot;.
-          </Alert>
-          <ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-            {UNAVAILABLE.map((m) => (
-              <li key={m} className="rounded-lg border border-dashed border-border p-3">
-                <p className="text-xs text-fg-subtle">{m}</p>
-                <p className="mt-1 flex items-center gap-1 text-sm text-fg-muted"><Info className="size-3.5" /> Indisponível</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </Card>
+      <InstagramMetrics published={current.filter((t) => t.status === "published")} insights={insights} accounts={accounts} snapshots={snapshots} />
 
       <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
         <Card>

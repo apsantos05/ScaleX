@@ -40,6 +40,9 @@ class FakeAdapter implements InstagramAdapter {
   async refreshToken(t: string) {
     return { accessToken: t, expiresInSec: 3600 };
   }
+  async getMediaBasic() {
+    return { likes: null, comments: null };
+  }
   async getMediaInsights() {
     return { reach: null, views: null, likes: null, comments: null, saved: null, shares: null };
   }

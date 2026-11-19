@@ -92,3 +92,37 @@ describe("permissões nos dois modos de login", async () => {
     expect(canReadInsights(["instagram_basic"])).toBe(false);
   });
 });
+
+describe("métricas por publicação", () => {
+  it("lê as métricas completas e usa graph.facebook.com", async () => {
+    const { impl, calls } = fakeFetch({
+      "/17900/insights": {
+        data: [
+          { name: "reach", values: [{ value: 120 }] },
+          { name: "views", total_value: { value: 300 } },
+          { name: "likes", values: [{ value: 14 }] },
+          { name: "comments", values: [{ value: 3 }] },
+          { name: "saved", values: [{ value: 2 }] },
+          { name: "shares", values: [{ value: 1 }] },
+        ],
+      },
+    });
+    const m = await new GraphInstagramAdapter(base, impl).getMediaInsights("SUAT", "17900", "FEED");
+    expect(m).toEqual({ reach: 120, views: 300, likes: 14, comments: 3, saved: 2, shares: 1 });
+    expect(calls[0]!.host).toBe("graph.facebook.com");
+    expect(calls[0]!.searchParams.get("metric")).toBe("reach,views,likes,comments,saved,shares");
+  });
+
+  it("Stories pedem só as métricas que existem para elas", async () => {
+    const { impl, calls } = fakeFetch({ "/17901/insights": { data: [{ name: "reach", values: [{ value: 50 }] }] } });
+    const m = await new GraphInstagramAdapter(base, impl).getMediaInsights("SUAT", "17901", "STORIES");
+    expect(calls[0]!.searchParams.get("metric")).toBe("reach,views,shares");
+    expect(m.reach).toBe(50);
+    expect(m.likes).toBeNull();
+  });
+
+  it("curtidas e comentários com a permissão básica", async () => {
+    const { impl } = fakeFetch({ "/17902": { like_count: 9, comments_count: 4 } });
+    expect(await new GraphInstagramAdapter(base, impl).getMediaBasic("SUAT", "17902")).toEqual({ likes: 9, comments: 4 });
+  });
+});

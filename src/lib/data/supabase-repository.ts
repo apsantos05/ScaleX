@@ -1,10 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { MemberError, memberErrorFrom } from "@/lib/domain/members";
 import type {
   AuditEntry,
   Campaign,
   CaptionTemplate,
   ExecutionLog,
   ID,
+  Invitation,
+  InvitationPreview,
   MediaAsset,
   Publication,
   PublicationTarget,
@@ -101,20 +104,97 @@ export class SupabaseWorkspaceRepository implements WorkspaceRepository {
   }
 
   async listMembers(workspaceId: ID) {
+    // workspace_members.user_id referencia auth.users (não profiles), então não há relação
+    // para o PostgREST embutir: buscamos os perfis numa segunda consulta (RLS permite ver colegas).
+    const rows = check(
+      await this.db.from("workspace_members").select("user_id, role, created_at").eq("workspace_id", workspaceId).order("created_at"),
+    ) as { user_id: string; role: Role; created_at: string }[];
+    const ids = rows.map((r) => r.user_id);
+    const profiles = ids.length
+      ? (check(await this.db.from("profiles").select("id, name, email").in("id", ids)) as { id: string; name: string; email: string }[])
+      : [];
+    return rows.map((r) => {
+      const p = profiles.find((x) => x.id === r.user_id);
+      return { workspaceId, userId: r.user_id, role: r.role, createdAt: r.created_at, name: p?.name ?? "", email: p?.email ?? "" };
+    });
+  }
+
+  async listInvitations(workspaceId: ID) {
     const rows = check(
       await this.db
-        .from("workspace_members")
-        .select("user_id, role, created_at, profiles:user_id(name, email)")
-        .eq("workspace_id", workspaceId),
-    ) as unknown as { user_id: string; role: Role; created_at: string; profiles: Row | null }[];
-    return rows.map((r) => ({
-      workspaceId,
-      userId: r.user_id,
-      role: r.role,
-      createdAt: r.created_at,
-      name: (r.profiles?.name as string) ?? "",
-      email: (r.profiles?.email as string) ?? "",
-    }));
+        .from("workspace_invitations")
+        .select("id, workspace_id, email, role, invited_by, expires_at, accepted_at, revoked_at, created_at")
+        .eq("workspace_id", workspaceId)
+        .is("accepted_at", null)
+        .is("revoked_at", null)
+        .order("created_at", { ascending: false }),
+    );
+    return (rows as Row[]).map((r) => fromRow<Invitation>(r));
+  }
+
+  async createInvitation(
+    workspaceId: ID,
+    input: { email: string; role: Invitation["role"]; tokenHash: string; invitedBy: ID; expiresAt: string },
+  ) {
+    const row = check(
+      await this.db
+        .from("workspace_invitations")
+        .insert({
+          workspace_id: workspaceId,
+          email: input.email,
+          role: input.role,
+          token_hash: input.tokenHash,
+          invited_by: input.invitedBy,
+          expires_at: input.expiresAt,
+        })
+        .select("id, workspace_id, email, role, invited_by, expires_at, accepted_at, revoked_at, created_at")
+        .single(),
+    );
+    return fromRow<Invitation>(row as Row);
+  }
+
+  async revokeInvitation(workspaceId: ID, id: ID) {
+    const rows = check(
+      await this.db
+        .from("workspace_invitations")
+        .update({ revoked_at: new Date().toISOString() })
+        .eq("workspace_id", workspaceId)
+        .eq("id", id)
+        .is("accepted_at", null)
+        .is("revoked_at", null)
+        .select("id"),
+    );
+    return (rows as Row[]).length > 0;
+  }
+
+  async previewInvitation(tokenHash: string): Promise<InvitationPreview | null> {
+    const rows = check(await this.db.rpc("get_invitation_preview", { p_token_hash: tokenHash })) as Row[] | null;
+    const r = rows?.[0];
+    return r
+      ? { workspaceName: r.workspace_name as string, role: r.role as Role, email: r.email as string, status: r.status as InvitationPreview["status"] }
+      : null;
+  }
+
+  private async rpcMember<T>(fn: string, args: Record<string, unknown>): Promise<T> {
+    const res = await this.db.rpc(fn, args);
+    if (res.error) {
+      const code = memberErrorFrom(res.error.message);
+      if (code) throw new MemberError(code);
+      throw new Error(`Supabase: ${res.error.message}`);
+    }
+    return res.data as T;
+  }
+
+  async acceptInvitation(tokenHash: string) {
+    return this.rpcMember<string>("accept_invitation", { p_token_hash: tokenHash });
+  }
+
+  async setMemberRole(workspaceId: ID, _actorId: ID, userId: ID, role: Role) {
+    await this.rpcMember("set_member_role", { p_workspace: workspaceId, p_user: userId, p_role: role });
+  }
+
+  async removeMember(workspaceId: ID, _actorId: ID, userId: ID) {
+    await this.rpcMember("remove_member", { p_workspace: workspaceId, p_user: userId });
   }
 
   async listAccounts(workspaceId: ID) {

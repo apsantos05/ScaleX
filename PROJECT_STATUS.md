@@ -1,6 +1,6 @@
 # ScaleX — PROJECT_STATUS
 
-_Atualizado em 18/11/2026 · Fase 1 (fundação do MVP) + Supabase de staging conectado_
+_Atualizado em 19/11/2026 · Fase 1 (fundação do MVP) + Supabase conectado + Rodada 1 da Auditoria Mestre (cron em produção, convites de membros)_
 
 Legenda: ✅ concluído e verificado · 🟡 parcial · 🧪 simulado (modo demo) · ⏳ pendente
 
@@ -23,12 +23,14 @@ Legenda: ✅ concluído e verificado · 🟡 parcial · 🧪 simulado (modo demo
 | Motor de jobs | Agendador e executor separados, lease, recuperação, 1 job/conta, backoff, erros classificados, limite diário, reuso de container, renovação de token | 12 testes do motor + worker executado no modo demo **e contra o Supabase** (6/6 simuladas publicadas, logs gravados) |
 | Segurança | Tokens AES-256-GCM, state OAuth assinado + nonce, cookies httpOnly, headers de segurança, `redact` nos logs, autorização por papel no servidor, isolamento por workspace | Testes de segurança e isolamento |
 | LGPD | Exportação JSON do workspace (proprietário), sem credenciais | Rota implementada |
+| Motor em produção (cron) | Migração `20261119010000_publish_cron.sql`: `pg_cron` chama `GET /api/cron/tick` da Vercel **a cada minuto** via `pg_net`, com URL e `CRON_SECRET` guardados no **Vault** do Supabase (função `trigger_publish_tick`, sem acesso para anon/authenticated) | Job `scalex-publish-tick` ativo; execuções `succeeded`; respostas HTTP 200 `{"promoted":0,"results":[]}` |
+| Membros e convites | Convite por link (token de 32 bytes, só o hash SHA-256 no banco, validade 7 dias, 1 convite ativo por e-mail, conta no limite do plano), revogação, aceite só com o **mesmo e-mail** convidado, troca de papel e remoção com regras (não altera a si mesmo, admin não mexe em proprietário, protege o último proprietário). Migração `20261119020000_invitations.sql` com funções `security definer`; tela em Configurações › Membros; página `/convite/[token]` | 9 testes unitários + **33/33** em `verify:supabase` (13 novas checagens) + fluxo no navegador: dono convida → convidado entra com outro e-mail (bloqueado) → sai, entra com o e-mail certo → aceita → cai no workspace como **Editor** |
 
 ## 🟡 Parciais
 
 - **Supabase verificado ponta a ponta** (login → workspace → upload direto ao Storage → direitos → agendamento em lote → worker → histórico/logs). **Ainda não verificados**: cadastro com e-mail de confirmação (o domínio `.test` é rejeitado e o SMTP padrão só envia a membros da organização), recuperação de senha por e-mail, troca de workspace e exclusão no modo real.
 - **OAuth Instagram** e **GraphInstagramAdapter**: implementados conforme documentação oficial; **nenhuma chamada real foi feita** (sem App ID/Secret). Requer App Review da Meta para escopos avançados.
-- **Membros**: listagem e papéis funcionam; **convite por e-mail e alteração de papel** ainda não.
+- **Convites**: o link é gerado e copiado/compartilhado manualmente; **envio automático por e-mail** depende do SMTP próprio (ver `docs/EMAIL-SMTP.md`).
 - **Rate limit** de endpoints é em memória (por instância).
 - **Miniaturas de vídeo**: exibidas via `<video preload=metadata>`; não há geração de thumbnail no servidor.
 - **Validação de mídia no modo real**: MIME/tamanho declarados + existência do objeto; magic bytes só no upload local.
@@ -43,10 +45,10 @@ Legenda: ✅ concluído e verificado · 🟡 parcial · 🧪 simulado (modo demo
 
 | Item | Necessário |
 |---|---|
-| Supabase (Auth) | ✅ projeto e migração prontos. Falta: **SMTP próprio** (ex.: Resend) para e-mails de confirmação/recuperação a clientes; Site URL/Redirect URLs de produção |
+| Supabase (Auth) | ✅ projeto e migrações prontos. Falta: **domínio + SMTP próprio (Resend)**, Site URL/Redirect URLs de produção e **religar "Confirm email"** — passo a passo em `docs/EMAIL-SMTP.md` |
 | Meta / Instagram | App Meta com produto “Instagram API with Instagram Login”, `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`, redirect URI cadastrada, App Review + Business Verification |
 | Criptografia | `TOKEN_ENCRYPTION_KEY` (32 bytes base64) e `SESSION_SECRET` |
-| Worker | Host Node para `npm run worker` (ou cron externo chamando `/api/cron/tick` com `CRON_SECRET`) |
+| Worker | ✅ resolvido com `pg_cron` do Supabase chamando `/api/cron/tick` a cada minuto. Se o domínio de produção mudar, atualizar o segredo `scalex_app_url` no Vault |
 | Pagamentos | Gateway (Stripe/Pagar.me) — **cobrança deliberadamente desativada** |
 | Insights | Job de coleta periódica de métricas (adapter já pronto) |
 
@@ -61,13 +63,16 @@ Legenda: ✅ concluído e verificado · 🟡 parcial · 🧪 simulado (modo demo
 7. **Relógio da máquina**: com o relógio do computador errado, o `@supabase/ssr` considera a sessão expirada, renova em loop e desloga (`refresh_token_already_used`). Mantenha o horário automático ativado no ambiente de desenvolvimento.
 8. Projeto Supabase em **us-east-2**; para usuários no Brasil, `sa-east-1` (São Paulo) teria menor latência.
 9. Em dev, o log de Server Actions do Next foi desativado (`logging.serverFunctions: false`) porque expunha a senha do login no terminal.
+10. **Corrigido na Rodada 1**: `listMembers` no Supabase usava um embed `profiles:user_id(...)` sem relação declarada e quebrava `/app/settings` e `/app/billing` no modo real (erro 500). Agora faz duas consultas.
+11. Plano trial passou a permitir **2 membros** (dono + sócio).
+12. Usuário de QA secundário (`QA2_*` no `.env.local`) existe no Supabase para testar convites; pode ser removido quando não for mais necessário.
 
 ## Próximas prioridades
 
-1. ~~Supabase de staging + testes de RLS~~ ✅ feito. Configurar SMTP próprio no Supabase Auth.
+1. ~~Supabase de staging + testes de RLS~~ ✅ feito. Configurar SMTP próprio no Supabase Auth (`docs/EMAIL-SMTP.md`).
 2. Criar o app na Meta, testar OAuth + publicação real em uma conta profissional de teste; revisar números de limite.
-3. Deploy do worker (Railway/Fly) com healthcheck e alerta de “fila parada”.
-4. Convites de membros, gestão de papéis e exclusão de workspace/conta (LGPD: direito ao esquecimento).
+3. ~~Worker em produção~~ ✅ `pg_cron` a cada minuto. Falta alerta externo de “fila parada”.
+4. ~~Convites de membros e gestão de papéis~~ ✅ feito. Falta exclusão de workspace/conta (LGPD: direito ao esquecimento).
 5. Job de insights + Analytics de alcance/visualizações/engajamento.
 6. Gateway de pagamento com webhooks (após aprovação), limites por plano já aplicados.
 7. Observabilidade: Sentry/OpenTelemetry, métricas da fila, painel interno.

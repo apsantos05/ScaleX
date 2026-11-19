@@ -168,3 +168,22 @@ export type AuditEntry = {
   meta: Record<string, unknown> | null;
   at: ISODate;
 };
+
+export type Invitation = {
+  id: ID;
+  workspaceId: ID;
+  email: string;
+  role: Exclude<Role, "owner">;
+  invitedBy: ID | null;
+  expiresAt: ISODate;
+  acceptedAt: ISODate | null;
+  revokedAt: ISODate | null;
+  createdAt: ISODate;
+};
+
+export type InvitationPreview = {
+  workspaceName: string;
+  role: Role;
+  email: string;
+  status: "valid" | "expired" | "revoked" | "accepted";
+};

@@ -4,6 +4,8 @@ import type {
   CaptionTemplate,
   ExecutionLog,
   ID,
+  Invitation,
+  InvitationPreview,
   MediaAsset,
   Member,
   Publication,
@@ -47,6 +49,20 @@ export interface WorkspaceRepository {
   getMembership(workspaceId: ID, userId: ID): Promise<{ role: Role; workspace: Workspace } | null>;
   updateWorkspace(workspaceId: ID, patch: { name?: string }): Promise<void>;
   listMembers(workspaceId: ID): Promise<Member[]>;
+
+  /** Convites pendentes (não aceitos, não revogados). */
+  listInvitations(workspaceId: ID): Promise<Invitation[]>;
+  createInvitation(
+    workspaceId: ID,
+    input: { email: string; role: Invitation["role"]; tokenHash: string; invitedBy: ID; expiresAt: string },
+  ): Promise<Invitation>;
+  revokeInvitation(workspaceId: ID, id: ID): Promise<boolean>;
+  /** Visível para quem tem o link, mesmo sem ser membro. */
+  previewInvitation(tokenHash: string): Promise<InvitationPreview | null>;
+  /** Lança MemberError em caso de convite inválido ou e-mail diferente. Retorna o workspace. */
+  acceptInvitation(tokenHash: string, user: { id: ID; email: string }): Promise<ID>;
+  setMemberRole(workspaceId: ID, actorId: ID, userId: ID, role: Role): Promise<void>;
+  removeMember(workspaceId: ID, actorId: ID, userId: ID): Promise<void>;
 
   listAccounts(workspaceId: ID): Promise<SocialAccount[]>;
   getAccount(workspaceId: ID, id: ID): Promise<SocialAccount | null>;

@@ -1,6 +1,10 @@
 import { randomUUID } from "node:crypto";
+import { assertCanChangeRole, assertCanRemove, invitationStatus, MemberError } from "@/lib/domain/members";
 import type {
   ID,
+  Invitation,
+  InvitationPreview,
+  Role,
   MediaAsset,
   Publication,
   PublicationTarget,
@@ -30,6 +34,21 @@ export function slugify(name: string): string {
       .replace(/^-|-$/g, "")
       .slice(0, 40) || "workspace"
   );
+}
+
+/** Remove campos internos (hash do token) antes de expor o convite. */
+function publicInvitation(i: Invitation): Invitation {
+  return {
+    id: i.id,
+    workspaceId: i.workspaceId,
+    email: i.email,
+    role: i.role,
+    invitedBy: i.invitedBy,
+    expiresAt: i.expiresAt,
+    acceptedAt: i.acceptedAt,
+    revokedAt: i.revokedAt,
+    createdAt: i.createdAt,
+  };
 }
 
 function toView(db: DemoDB, t: PublicationTarget): TargetView {
@@ -102,6 +121,111 @@ export class DemoRepository implements WorkspaceRepository, SystemRepository {
           createdAt: m.createdAt,
         };
       });
+  }
+
+  // ───────────── Convites e membros ─────────────
+  async listInvitations(workspaceId: ID) {
+    const db = await this.store.read();
+    return db.invitations
+      .filter((i) => i.workspaceId === workspaceId && !i.acceptedAt && !i.revokedAt)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map(publicInvitation);
+  }
+
+  async createInvitation(
+    workspaceId: ID,
+    input: { email: string; role: Invitation["role"]; tokenHash: string; invitedBy: ID; expiresAt: string },
+  ) {
+    return this.store.mutate((db) => {
+      const inv = {
+        id: randomUUID(),
+        workspaceId,
+        email: input.email,
+        role: input.role,
+        invitedBy: input.invitedBy,
+        expiresAt: input.expiresAt,
+        acceptedAt: null,
+        revokedAt: null,
+        createdAt: now(),
+        tokenHash: input.tokenHash,
+        acceptedBy: null,
+      };
+      db.invitations.push(inv);
+      return publicInvitation(inv);
+    });
+  }
+
+  async revokeInvitation(workspaceId: ID, id: ID) {
+    return this.store.mutate((db) => {
+      const inv = db.invitations.find((i) => i.workspaceId === workspaceId && i.id === id);
+      if (!inv || inv.acceptedAt || inv.revokedAt) return false;
+      inv.revokedAt = now();
+      return true;
+    });
+  }
+
+  async previewInvitation(tokenHash: string): Promise<InvitationPreview | null> {
+    const db = await this.store.read();
+    const inv = db.invitations.find((i) => i.tokenHash === tokenHash);
+    const ws = inv && db.workspaces.find((w) => w.id === inv.workspaceId);
+    if (!inv || !ws) return null;
+    return { workspaceName: ws.name, role: inv.role, email: inv.email, status: invitationStatus(inv) };
+  }
+
+  async acceptInvitation(tokenHash: string, user: { id: ID; email: string }) {
+    return this.store.mutate((db) => {
+      const inv = db.invitations.find((i) => i.tokenHash === tokenHash);
+      if (!inv) throw new MemberError("not_found");
+      const status = invitationStatus(inv);
+      if (status !== "valid") throw new MemberError(status);
+      if (inv.email.toLowerCase() !== user.email.toLowerCase()) throw new MemberError("email_mismatch");
+      if (!db.members.some((m) => m.workspaceId === inv.workspaceId && m.userId === user.id)) {
+        db.members.push({ workspaceId: inv.workspaceId, userId: user.id, role: inv.role, createdAt: now() });
+      }
+      inv.acceptedAt = now();
+      inv.acceptedBy = user.id;
+      db.audit.push({
+        id: randomUUID(),
+        workspaceId: inv.workspaceId,
+        actorId: user.id,
+        action: "member.joined",
+        entity: "workspace_member",
+        entityId: null,
+        meta: { role: inv.role },
+        at: now(),
+      });
+      return inv.workspaceId;
+    });
+  }
+
+  async setMemberRole(workspaceId: ID, actorId: ID, userId: ID, role: Role) {
+    await this.store.mutate((db) => {
+      const members = db.members.filter((m) => m.workspaceId === workspaceId);
+      const target = members.find((m) => m.userId === userId);
+      assertCanChangeRole({
+        actorId,
+        actorRole: members.find((m) => m.userId === actorId)?.role ?? null,
+        targetId: userId,
+        targetRole: target?.role ?? null,
+        newRole: role,
+        ownerCount: members.filter((m) => m.role === "owner").length,
+      });
+      target!.role = role;
+    });
+  }
+
+  async removeMember(workspaceId: ID, actorId: ID, userId: ID) {
+    await this.store.mutate((db) => {
+      const members = db.members.filter((m) => m.workspaceId === workspaceId);
+      assertCanRemove({
+        actorId,
+        actorRole: members.find((m) => m.userId === actorId)?.role ?? null,
+        targetId: userId,
+        targetRole: members.find((m) => m.userId === userId)?.role ?? null,
+        ownerCount: members.filter((m) => m.role === "owner").length,
+      });
+      db.members = db.members.filter((m) => !(m.workspaceId === workspaceId && m.userId === userId));
+    });
   }
 
   // ───────────── Contas ─────────────

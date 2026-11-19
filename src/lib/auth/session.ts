@@ -5,7 +5,8 @@ import { cache } from "react";
 import { getDemoStore } from "@/lib/data/demo-store";
 import { supabaseUserClient } from "@/lib/data/supabase-clients";
 import type { User } from "@/lib/domain/types";
-import { appUrl, getDataMode, sessionSecret } from "@/lib/env";
+import { getDataMode, sessionSecret } from "@/lib/env";
+import { requestOrigin } from "@/lib/request";
 import { hashPassword, sign, verify, verifyPassword } from "@/lib/security/crypto";
 
 export const DEMO_SESSION_COOKIE = "sx_session";
@@ -45,13 +46,13 @@ async function setDemoSession(uid: string) {
 
 export type AuthResult = { ok: true; needsEmailConfirmation?: boolean } | { ok: false; error: string };
 
-export async function signUp(input: { name: string; email: string; password: string }): Promise<AuthResult> {
+export async function signUp(input: { name: string; email: string; password: string }, next = "/onboarding"): Promise<AuthResult> {
   if (getDataMode() === "supabase") {
     const sb = await supabaseUserClient();
     const { data, error } = await sb.auth.signUp({
       email: input.email,
       password: input.password,
-      options: { data: { name: input.name }, emailRedirectTo: `${appUrl()}/auth/callback?next=/onboarding` },
+      options: { data: { name: input.name }, emailRedirectTo: `${await requestOrigin()}/auth/callback?next=${encodeURIComponent(next)}` },
     });
     if (error) return { ok: false, error: translateAuthError(error.message) };
     return { ok: true, needsEmailConfirmation: !data.session };
@@ -96,7 +97,7 @@ export async function signOut(): Promise<void> {
 export async function requestPasswordReset(email: string): Promise<AuthResult> {
   if (getDataMode() === "supabase") {
     const sb = await supabaseUserClient();
-    await sb.auth.resetPasswordForEmail(email, { redirectTo: `${appUrl()}/auth/callback?next=/reset-password` });
+    await sb.auth.resetPasswordForEmail(email, { redirectTo: `${await requestOrigin()}/auth/callback?next=/reset-password` });
   }
   // Resposta idêntica exista ou não o e-mail (evita enumeração).
   return { ok: true };

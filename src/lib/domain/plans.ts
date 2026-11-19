@@ -23,7 +23,7 @@ export const PLANS: Record<PlanId, PlanLimits> = {
     maxAccounts: 3,
     maxScheduledPerMonth: 60,
     maxStorageMb: 500,
-    maxMembers: 1,
+    maxMembers: 2,
     features: ["Até 3 contas", "60 publicações/mês", "Biblioteca 500 MB"],
   },
   starter: {

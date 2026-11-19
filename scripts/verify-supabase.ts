@@ -5,7 +5,7 @@
  * Cria 2 usuários temporários (e-mails @scalex.test, senhas aleatórias nunca exibidas), exercita RLS,
  * storage e funções do worker, e REMOVE tudo ao final (usuários, workspaces em cascata e arquivos).
  */
-import { randomBytes, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { loadEnvConfig } from "@next/env";
 import { createClient } from "@supabase/supabase-js";
 
@@ -27,7 +27,7 @@ async function makeUser(tag: string) {
   const client = createClient(URL, ANON, { auth: { persistSession: false } });
   const s = await client.auth.signInWithPassword({ email, password });
   if (s.error) throw new Error(`signIn: ${s.error.message}`);
-  return { id: data.user.id, client };
+  return { id: data.user.id, client, email };
 }
 
 async function main() {
@@ -91,6 +91,39 @@ async function main() {
     check("B não envia arquivo na pasta de A", !!upB.error);
     const dlB = await b.client.storage.from("media").download(pathA);
     check("B não baixa arquivo de A", !!dlB.error);
+
+    // 7b) Convites e papéis (RLS + funções)
+    const c = await makeUser("c");
+    created.push(c.id);
+    const token = randomBytes(32).toString("base64url");
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+    const inv = await a.client.from("workspace_invitations").insert({ workspace_id: A, email: b.email, role: "editor", token_hash: tokenHash, invited_by: a.id, expires_at: new Date(Date.now() + 86_400_000).toISOString() }).select("id").single();
+    check("owner cria convite", !inv.error, inv.error?.message);
+    const bInvites = await b.client.from("workspace_invitations").select("id").eq("workspace_id", A);
+    check("não-membro não lista convites alheios", (bInvites.data?.length ?? 0) === 0);
+    const anonPrev = await createClient(URL, ANON, { auth: { persistSession: false } }).rpc("get_invitation_preview", { p_token_hash: tokenHash });
+    check("anônimo não pré-visualiza convite", !!anonPrev.error);
+    const prev = await b.client.rpc("get_invitation_preview", { p_token_hash: tokenHash });
+    check("convidado pré-visualiza o convite", (prev.data as { status: string }[] | null)?.[0]?.status === "valid", prev.error?.message);
+    const wrong = await c.client.rpc("accept_invitation", { p_token_hash: tokenHash });
+    check("outro e-mail não aceita o convite", !!wrong.error && wrong.error.message.includes("email_mismatch"), wrong.error?.message);
+    const accepted = await b.client.rpc("accept_invitation", { p_token_hash: tokenHash });
+    check("convidado aceita e vira membro", accepted.data === A, accepted.error?.message);
+    const again = await b.client.rpc("accept_invitation", { p_token_hash: tokenHash });
+    check("link não pode ser reutilizado", !!again.error && again.error.message.includes("accepted"));
+    const bSeesNow = await b.client.from("social_accounts").select("id").eq("workspace_id", A);
+    check("novo membro passa a ver os dados do workspace", (bSeesNow.data?.length ?? 0) === 1);
+    const bPromote = await b.client.rpc("set_member_role", { p_workspace: A, p_user: b.id, p_role: "owner" });
+    check("editor não altera papéis", !!bPromote.error);
+    const bDirect = await b.client.from("workspace_members").update({ role: "owner" }).eq("workspace_id", A).eq("user_id", b.id).select("user_id");
+    check("escrita direta em membros é bloqueada", (bDirect.data?.length ?? 0) === 0);
+    const selfDemote = await a.client.rpc("set_member_role", { p_workspace: A, p_user: a.id, p_role: "viewer" });
+    check("dono não altera o próprio papel", !!selfDemote.error && selfDemote.error.message.includes("self"));
+    const toViewer = await a.client.rpc("set_member_role", { p_workspace: A, p_user: b.id, p_role: "viewer" });
+    check("dono altera papel de membro", !toViewer.error, toViewer.error?.message);
+    const rm = await a.client.rpc("remove_member", { p_workspace: A, p_user: b.id });
+    const gone = await admin.from("workspace_members").select("user_id").eq("workspace_id", A).eq("user_id", b.id);
+    check("dono remove membro", !rm.error && gone.data?.length === 0, rm.error?.message);
 
     // 8) Publicação idempotente + fila do worker
     const key = randomUUID();

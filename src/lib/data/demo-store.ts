@@ -5,6 +5,7 @@ import type {
   Campaign,
   CaptionTemplate,
   ExecutionLog,
+  Invitation,
   MediaAsset,
   Publication,
   PublicationTarget,
@@ -17,12 +18,14 @@ import type { EncryptedCredential } from "./repository";
 
 export type DemoUser = User & { passwordHash: string; createdAt: string };
 export type DemoMember = { workspaceId: string; userId: string; role: Role; createdAt: string };
+export type DemoInvitation = Invitation & { tokenHash: string; acceptedBy: string | null };
 
 export type DemoDB = {
   version: 1;
   users: DemoUser[];
   workspaces: Workspace[];
   members: DemoMember[];
+  invitations: DemoInvitation[];
   accounts: SocialAccount[];
   credentials: EncryptedCredential[];
   media: MediaAsset[];
@@ -40,6 +43,7 @@ export function emptyDb(): DemoDB {
     users: [],
     workspaces: [],
     members: [],
+    invitations: [],
     accounts: [],
     credentials: [],
     media: [],
@@ -77,7 +81,9 @@ export class DemoStore {
     if (!this.filePath) return structuredClone(this.memory ?? emptyDb());
     try {
       const raw = await fs.readFile(this.filePath, "utf8");
-      return JSON.parse(raw) as DemoDB;
+      const db = JSON.parse(raw) as DemoDB;
+      db.invitations ??= []; // compatível com arquivos criados antes dos convites
+      return db;
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === "ENOENT") return emptyDb();
       throw err;

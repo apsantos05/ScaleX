@@ -4,6 +4,8 @@ import { requireWorkspace, roleAtLeast } from "@/lib/auth/context";
 import { getDataMode } from "@/lib/env";
 import { isInstagramConfigured } from "@/lib/integrations/instagram";
 import { formatDate } from "@/lib/utils";
+import { planLimits } from "@/lib/domain/plans";
+import { MembersManager } from "./members-manager";
 import { WorkspaceForm } from "./workspace-form";
 
 export const metadata: Metadata = { title: "Configurações" };
@@ -12,7 +14,10 @@ const ROLE_LABEL = { owner: "Proprietário", admin: "Administrador", editor: "Ed
 
 export default async function SettingsPage() {
   const { repo, workspace, role, user } = await requireWorkspace();
-  const members = await repo.listMembers(workspace.id);
+  const [members, invitations] = await Promise.all([
+    repo.listMembers(workspace.id),
+    roleAtLeast(role, "admin") ? repo.listInvitations(workspace.id) : Promise.resolve([]),
+  ]);
   const mode = getDataMode();
 
   return (
@@ -36,20 +41,13 @@ export default async function SettingsPage() {
           </div>
         </Card>
 
-        <Card>
-          <CardHeader title="Membros" description="Convites por e-mail chegam na próxima fase (ver PROJECT_STATUS.md)." />
-          <ul className="divide-y divide-border/60 p-2">
-            {members.map((m) => (
-              <li key={m.userId} className="flex items-center justify-between px-3 py-2.5 text-sm">
-                <div>
-                  <p>{m.name || m.email}{m.userId === user.id && <span className="text-fg-subtle"> (você)</span>}</p>
-                  <p className="text-xs text-fg-subtle">{m.email}</p>
-                </div>
-                <Badge tone={m.role === "owner" ? "brand" : "neutral"}>{ROLE_LABEL[m.role]}</Badge>
-              </li>
-            ))}
-          </ul>
-        </Card>
+        <MembersManager
+          members={members}
+          invitations={invitations}
+          currentUserId={user.id}
+          myRole={role}
+          limit={planLimits(workspace.plan).maxMembers}
+        />
 
         <Card>
           <CardHeader title="Segurança e dados" />

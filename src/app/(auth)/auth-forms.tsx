@@ -96,12 +96,12 @@ export function SignInForm({ next }: { next?: string }) {
 
 type SignUpValues = z.input<typeof signUpSchema>;
 
-export function SignUpForm() {
+export function SignUpForm({ next }: { next?: string }) {
   const form = useForm<SignUpValues>({ resolver: zodResolver(signUpSchema) });
   const { error, message, run } = useAuthSubmit();
   const termsErr = form.formState.errors.acceptTerms?.message;
   return (
-    <form className="grid gap-4" noValidate onSubmit={form.handleSubmit((v) => run(signUpAction(v)))}>
+    <form className="grid gap-4" noValidate onSubmit={form.handleSubmit((v) => run(signUpAction(v, next)))}>
       <TextField form={form} name="name" label="Nome" autoComplete="name" />
       <TextField form={form} name="email" label="E-mail" type="email" autoComplete="email" />
       <TextField form={form} name="password" label="Senha (mín. 8 caracteres)" type="password" autoComplete="new-password" />

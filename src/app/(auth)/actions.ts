@@ -36,22 +36,22 @@ async function safe(fn: () => Promise<ActionResult>): Promise<ActionResult> {
   }
 }
 
-function safeNext(next: unknown): string {
-  return typeof next === "string" && next.startsWith("/app") && !next.startsWith("//") ? next : "/app";
+function safeNext(next: unknown, fallback = "/app"): string {
+  return typeof next === "string" && /^\/(app|convite\/)/.test(next) && !next.startsWith("//") ? next : fallback;
 }
 
-export async function signUpAction(values: unknown): Promise<ActionResult> {
+export async function signUpAction(values: unknown, next?: string): Promise<ActionResult> {
   return safe(async () => {
     const limited = await guard("signup", 10);
     if (limited) return limited;
     const parsed = signUpSchema.safeParse(values);
     if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
-    const r = await signUp(parsed.data);
+    const r = await signUp(parsed.data, safeNext(next, "/onboarding"));
     if (!r.ok) return r;
     if (r.needsEmailConfirmation) {
       return { ok: true, message: "Enviamos um link de confirmação para o seu e-mail." };
     }
-    return { ok: true, redirectTo: "/onboarding" };
+    return { ok: true, redirectTo: safeNext(next, "/onboarding") };
   });
 }
 
@@ -87,6 +87,12 @@ export async function resetPasswordAction(values: unknown): Promise<ActionResult
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Senha inválida." };
   const r = await updatePassword(parsed.data.password);
   return r.ok ? { ok: true, redirectTo: "/app" } : r;
+}
+
+/** Sai e volta ao login preservando o destino (ex.: aceitar convite com outro e-mail). */
+export async function signOutToAction(next: string) {
+  await signOut();
+  redirect(`/login?next=${encodeURIComponent(safeNext(next))}`);
 }
 
 export async function signOutAction() {

@@ -2,7 +2,31 @@
 
 > Revalide sempre na documentação oficial antes de produção. Alguns números divergem entre páginas da própria Meta.
 
-## Caminho escolhido: **Instagram API with Instagram Login**
+## Atualização (19/11/2026): login unificado
+
+A Meta **não oferece mais** a "configuração da API com login do Instagram" para apps novos; o app da ScaleX
+usa a **API do Instagram com login unificado** (Login do Facebook para Empresas). A ScaleX suporta os dois modos:
+
+| | Login unificado (atual) | Instagram Login (legado) |
+|---|---|---|
+| Ativado por | `INSTAGRAM_CONFIG_ID` definido | `INSTAGRAM_CONFIG_ID` vazio |
+| Autorização | `facebook.com/{v}/dialog/oauth?config_id=…` (sem `scope`) | `instagram.com/oauth/authorize?scope=…` |
+| Token | Usuário do sistema, **não expira** (sem renovação) | Longo, 60 dias, renovável |
+| Host da API | `graph.facebook.com` | `graph.instagram.com` |
+| Contas por autorização | Várias (`/me/assigned_instagram_accounts`) | Uma |
+| Permissões obrigatórias | `instagram_basic`, `instagram_content_publish` | `instagram_business_basic`, `instagram_business_content_publish` |
+
+Requisitos: o app precisa estar ligado a um **portfólio empresarial**, e a conta do Instagram deve ser
+profissional. Não é preciso Página do Facebook. A configuração atual tem o ID `1122224850703890`,
+criada a partir do modelo.
+
+Variáveis na Vercel:
+- `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET` e `INSTAGRAM_CONFIG_ID`;
+- `TOKEN_ENCRYPTION_KEY` (32 bytes base64);
+- `INSTAGRAM_REDIRECT_URI=https://scale-x-kkn5.vercel.app/api/integrations/instagram/callback`, que precisa
+  ser igual ao URL salvo na configuração da Meta.
+
+## Caminho original: **Instagram API with Instagram Login** (legado)
 
 | Opção | Requer Página do Facebook? | Host | Uso na ScaleX |
 |---|---|---|---|

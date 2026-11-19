@@ -18,6 +18,8 @@ const ERRORS: Record<string, string> = {
   conta_nao_profissional: "Apenas contas profissionais (Empresa ou Criador) podem ser conectadas.",
   falha_na_conexao: "Não foi possível concluir a conexão com o Instagram. Tente novamente.",
   falha_ao_iniciar: "Não foi possível iniciar a conexão.",
+  nenhuma_conta_liberada:
+    "Nenhuma conta do Instagram foi liberada nesta autorização. Repita a conexão e selecione as contas profissionais na tela da Meta.",
 };
 
 export default async function AccountsPage({ searchParams }: PageProps<"/app/accounts">) {
@@ -41,7 +43,12 @@ export default async function AccountsPage({ searchParams }: PageProps<"/app/acc
         }
       />
       {error && <Alert tone="danger" className="mb-4">{error}</Alert>}
-      {connected && <Alert tone="success" className="mb-4">Conta @{connected} conectada com sucesso.</Alert>}
+      {connected && (
+        <Alert tone="success" className="mb-4">
+          {connected.endsWith(" contas") ? `${connected} conectadas com sucesso.` : `Conta @${connected} conectada com sucesso.`}
+          {typeof sp.skipped === "string" && ` ${sp.skipped} conta(s) não foram adicionadas porque o plano atingiu o limite.`}
+        </Alert>
+      )}
       {!isInstagramConfigured() && (
         <Alert tone="info" className="mb-4" title="Conexão com o Instagram em ativação">
           Em breve você poderá conectar contas profissionais (Empresa ou Criador) pelo login oficial do Instagram — sem

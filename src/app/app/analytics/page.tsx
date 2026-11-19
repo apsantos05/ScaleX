@@ -102,7 +102,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/app/an
         <CardHeader title="Métricas de desempenho (Instagram Insights)" description="Alcance, visualizações e engajamento por publicação" />
         <div className="p-5">
           <Alert tone="info" title="Ainda não disponível nesta versão">
-            A coleta de insights via API oficial (escopo <code className="break-all font-mono">instagram_business_manage_insights</code>) está
+            A coleta de insights via API oficial (permissão de insights do Instagram) está
             implementada no adapter, mas o job de sincronização periódica ainda não foi ativado. Contas demo nunca terão métricas —
             a ScaleX não exibe números estimados ou fictícios. Observação: desde a Graph API v22 a métrica &quot;impressões&quot; foi
             substituída por &quot;visualizações&quot;.

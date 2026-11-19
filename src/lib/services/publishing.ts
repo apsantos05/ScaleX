@@ -4,6 +4,7 @@ import { planLimits } from "@/lib/domain/plans";
 import { schedulePublicationSchema } from "@/lib/domain/schemas";
 import { isCancellable, isReschedulable } from "@/lib/domain/status";
 import type { ID, PublicationTarget, Workspace } from "@/lib/domain/types";
+import { canPublish } from "@/lib/domain/instagram-scopes";
 
 export type ScheduleResult =
   | {
@@ -78,7 +79,7 @@ export async function schedulePublication(
       perAccount.push({ accountId: id, username: "?", status: "skipped", reason: "Conta não pertence ao workspace." });
     } else if (acc.status !== "active") {
       perAccount.push({ accountId: id, username: acc.username, status: "skipped", reason: "Conta precisa ser reconectada." });
-    } else if (!acc.isDemo && !acc.scopes.includes("instagram_business_content_publish")) {
+    } else if (!acc.isDemo && !canPublish(acc.scopes)) {
       perAccount.push({ accountId: id, username: acc.username, status: "skipped", reason: "Permissão de publicação não concedida." });
     } else {
       eligible.push(id);

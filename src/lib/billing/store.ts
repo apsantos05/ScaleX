@@ -106,7 +106,8 @@ async function upsertSubscription(workspaceId: string, patch: Record<string, unk
 }
 
 async function setWorkspacePlan(workspaceId: string, plan: PlanId) {
-  must(await db().from("workspaces").update({ plan }).eq("id", workspaceId));
+  // Pagamento confirmado encerra o teste grátis (trial_ends_at = null); sem plano, o workspace fica bloqueado.
+  must(await db().from("workspaces").update({ plan, trial_ends_at: null }).eq("id", workspaceId));
 }
 
 export async function activate(input: {

@@ -43,7 +43,7 @@ export async function organizeAccountsAction(input: {
 
 export async function disconnectAccountsAction(ids: string[]): Promise<Result> {
   try {
-    const ctx = await authorize("admin");
+    const ctx = await authorize("admin", { allowLocked: true });
     const system = getSystemRepo();
     for (const id of ids) {
       const acc = await ctx.repo.getAccount(ctx.workspace.id, id);

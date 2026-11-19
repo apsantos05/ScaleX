@@ -55,7 +55,7 @@ export default function TermsPage() {
 
       <h2>4. Planos, pagamento e cancelamento</h2>
       <ul>
-        <li>Os planos e limites estão na página de Assinatura do app. O plano Trial é gratuito e limitado.</li>
+        <li>Os planos e limites estão na página de Assinatura do app. Toda conta nova ganha um teste grátis do plano Pro por 3 dias, sem cartão. Ao fim do teste, o acesso ao app fica bloqueado até a assinatura de um plano; os dados ficam guardados e podem ser exportados ou excluídos.</li>
         <li>
           Os planos pagos são assinaturas mensais renovadas automaticamente e processadas pela <strong>Cakto</strong>, que também emite os
           comprovantes.
@@ -68,7 +68,7 @@ export default function TermsPage() {
           <strong>Direito de arrependimento:</strong> na primeira contratação, você pode pedir reembolso integral em até 7 dias (Código de
           Defesa do Consumidor, art. 49).
         </li>
-        <li>Em caso de estorno, reembolso ou chargeback, o workspace volta ao plano Trial.</li>
+        <li>Em caso de estorno, reembolso ou chargeback, o acesso do workspace fica bloqueado até uma nova assinatura.</li>
         <li>Mudanças de preço serão avisadas com pelo menos 30 dias de antecedência e valem a partir da renovação seguinte.</li>
       </ul>
 
@@ -94,7 +94,7 @@ export default function TermsPage() {
       <h2>7. Encerramento</h2>
       <p>
         Você pode encerrar sua conta quando quiser (veja <Link href="/exclusao-de-dados">Exclusão de dados</Link>). Podemos encerrar contas
-        que violem estes termos ou que fiquem inativas por mais de 12 meses no plano Trial, com aviso prévio por e-mail.
+        que violem estes termos ou que fiquem inativas por mais de 12 meses sem plano ativo, com aviso prévio por e-mail.
       </p>
 
       <h2>8. Alterações e lei aplicável</h2>

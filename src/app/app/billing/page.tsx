@@ -15,7 +15,7 @@ import { CancelSubscriptionButton, SubscribeButton } from "./billing-actions";
 export const metadata: Metadata = { title: "Assinatura" };
 
 const STATUS: Record<string, { label: string; tone: Tone }> = {
-  trialing: { label: "Trial", tone: "neutral" },
+  trialing: { label: "Teste grátis", tone: "brand" },
   active: { label: "Ativa", tone: "success" },
   past_due: { label: "Pagamento em atraso", tone: "warning" },
   paused: { label: "Pausada", tone: "warning" },
@@ -59,6 +59,7 @@ export default async function BillingPage({ searchParams }: PageProps<"/app/bill
   const status = paidViaCakto ? STATUS[subscription.status] : undefined;
   const currentRank = PLAN_ORDER.indexOf(workspace.plan);
   const returning = sp.checkout === "retorno";
+  const onTrial = !!workspace.trialEndsAt;
 
   return (
     <>
@@ -87,9 +88,11 @@ export default async function BillingPage({ searchParams }: PageProps<"/app/bill
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader
-            title={`Plano ${limits.name}`}
+            title={onTrial ? `Plano ${limits.name} · teste grátis` : `Plano ${limits.name}`}
             description={
-              paidViaCakto && subscription.currentPeriodEnd
+              onTrial
+                ? `Teste grátis até ${formatDateTime(workspace.trialEndsAt!)}. Depois disso, o acesso continua só com um plano assinado.`
+                : paidViaCakto && subscription.currentPeriodEnd
                 ? subscription.status === "canceled"
                   ? `Cancelado · ativo até ${formatDate(subscription.currentPeriodEnd)}`
                   : `Próxima renovação prevista: ${formatDate(subscription.currentPeriodEnd)}`
@@ -99,7 +102,7 @@ export default async function BillingPage({ searchParams }: PageProps<"/app/bill
                     ? "Gratuito"
                     : "Plano personalizado"
             }
-            action={status ? <Badge tone={status.tone}>{status.label}</Badge> : <Badge tone="brand">Atual</Badge>}
+            action={onTrial ? <Badge tone="brand">Teste grátis</Badge> : status ? <Badge tone={status.tone}>{status.label}</Badge> : <Badge tone="brand">Atual</Badge>}
           />
           <div className="grid gap-5 p-5 sm:grid-cols-2">
             {usage.map((u) => (
@@ -145,9 +148,9 @@ export default async function BillingPage({ searchParams }: PageProps<"/app/bill
         Pagamento seguro pela Cakto (cartão ou Pix). O plano é liberado automaticamente após a confirmação.
         {!isOwner && " Somente o proprietário do workspace pode assinar ou trocar de plano."}
       </p>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {Object.values(PLANS).map((p) => {
-          const current = p.id === workspace.plan;
+      <div className="grid gap-4 md:grid-cols-3">
+        {Object.values(PLANS).filter((p) => p.id !== "trial").map((p) => {
+          const current = p.id === workspace.plan && !onTrial;
           const rank = PLAN_ORDER.indexOf(p.id);
           const purchasable = p.id !== "trial" && !!offers[p.id as keyof typeof offers];
           return (
@@ -155,7 +158,7 @@ export default async function BillingPage({ searchParams }: PageProps<"/app/bill
               <div className="flex h-full flex-col p-5">
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="font-semibold">{p.name}</h3>
-                  {current && <Badge tone="brand">Seu plano</Badge>}
+                  {current ? <Badge tone="brand">Seu plano</Badge> : onTrial && p.id === workspace.plan ? <Badge tone="brand">Em teste</Badge> : null}
                 </div>
                 <p className="mt-2 text-2xl font-semibold">
                   {p.priceBRL === null ? "Sob consulta" : p.priceBRL === 0 ? "Grátis" : `R$ ${p.priceBRL}`}
@@ -171,7 +174,7 @@ export default async function BillingPage({ searchParams }: PageProps<"/app/bill
                 </ul>
                 <div className="mt-5">
                   {current || p.id === "trial" ? null : isOwner && billingOn && purchasable ? (
-                    <SubscribeButton plan={p.id} label={rank > currentRank ? `Assinar ${p.name}` : `Mudar para ${p.name}`} variant={rank > currentRank ? "primary" : "secondary"} />
+                    <SubscribeButton plan={p.id} label={onTrial || rank > currentRank ? `Assinar ${p.name}` : `Mudar para ${p.name}`} variant={onTrial ? (p.id === workspace.plan ? "primary" : "secondary") : rank > currentRank ? "primary" : "secondary"} />
                   ) : p.priceBRL === null ? (
                     <a
                       href="https://www.instagram.com/scalexspam/"
@@ -194,17 +197,19 @@ export default async function BillingPage({ searchParams }: PageProps<"/app/bill
         {paidViaCakto && subscription.status !== "canceled" ? (
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p>
-              Cancele quando quiser: não há multa. O plano continua ativo até o fim do período já pago e depois o workspace volta ao Trial.
+              Cancele quando quiser: não há multa. O plano continua ativo até o fim do período já pago; depois disso, o acesso fica bloqueado até uma nova assinatura.
               {!isCaktoApiConfigured() && " Você também pode cancelar pelo link do e-mail da Cakto."}
             </p>
             {isOwner && <CancelSubscriptionButton periodEnd={subscription.currentPeriodEnd} />}
           </div>
         ) : paidViaCakto ? (
           <p>Assinatura cancelada. Nenhuma nova cobrança será feita.</p>
+        ) : onTrial ? (
+          <p>O teste grátis não gera cobranças e não precisa ser cancelado. Ao fim do teste, o acesso só continua com um plano assinado.</p>
         ) : workspace.plan !== "trial" ? (
           <p>Este plano é gerenciado diretamente pela equipe ScaleX. Para alterações, fale com a gente.</p>
         ) : (
-          <p>O plano Trial não gera cobranças e não precisa ser cancelado.</p>
+          <p>Nenhum plano ativo. Assine um plano para usar a ScaleX.</p>
         )}
       </Card>
     </>

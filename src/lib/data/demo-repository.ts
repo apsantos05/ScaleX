@@ -84,7 +84,7 @@ export class DemoRepository implements WorkspaceRepository, SystemRepository {
       const base = slugify(name);
       let slug = base;
       for (let i = 2; db.workspaces.some((w) => w.slug === slug); i++) slug = `${base}-${i}`;
-      const ws: Workspace = { id: randomUUID(), name, slug, plan: "trial", createdAt: now() };
+      const ws: Workspace = { id: randomUUID(), name, slug, plan: "pro", trialEndsAt: new Date(Date.now() + 3 * 86_400_000).toISOString(), createdAt: now() };
       db.workspaces.push(ws);
       db.members.push({ workspaceId: ws.id, userId, role: "owner", createdAt: now() });
       return ws;

@@ -78,4 +78,6 @@ export const AUDIT_LABEL: Record<string, string> = {
   "workspace.created": "Criou o workspace",
   "workspace.exported": "Exportou os dados do workspace",
   "workspace.updated": "Atualizou o workspace",
+  "billing.checkout_started": "Abriu o checkout de um plano",
+  "billing.subscription_canceled": "Cancelou a assinatura",
 };

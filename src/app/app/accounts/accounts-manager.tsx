@@ -222,7 +222,8 @@ export function AccountsManager({
                 <span className="truncate">@{a.username}</span>
                 {a.isDemo && <Badge tone="warning">Demo</Badge>}
               </p>
-              <p className="truncate text-xs text-fg-subtle">{a.displayName} · sinc. {formatRelative(a.lastSyncedAt, undefined, true)}</p>
+              {/* Tempo relativo muda entre o servidor e o navegador: diferença esperada, não é erro. */}
+              <p className="truncate text-xs text-fg-subtle" suppressHydrationWarning>{a.displayName} · sinc. {formatRelative(a.lastSyncedAt, undefined, true)}</p>
               <div className="mt-1.5 flex flex-wrap gap-1">
                 <AccountStatusBadge status={a.status} />
                 {a.group && <Badge tone="info">{a.group}</Badge>}
@@ -282,7 +283,7 @@ export function AccountsManager({
                 <td className="py-3">
                   <AccountStatusBadge status={a.status} />
                   {a.tokenExpiresAt && Date.parse(a.tokenExpiresAt) - new Date().getTime() < 7 * 86_400_000 && (
-                    <p className="mt-1 text-xs text-warning">Token expira {formatRelative(a.tokenExpiresAt)}</p>
+                    <p className="mt-1 text-xs text-warning" suppressHydrationWarning>Token expira {formatRelative(a.tokenExpiresAt)}</p>
                   )}
                 </td>
                 <td className="py-3">
@@ -295,7 +296,7 @@ export function AccountsManager({
                   </div>
                 </td>
                 <td className="py-3 tabular-nums text-fg-muted">{formatNumber(a.followersCount)}</td>
-                <td className="py-3 text-fg-muted">{formatRelative(a.lastSyncedAt, undefined, true)}</td>
+                <td className="py-3 text-fg-muted" suppressHydrationWarning>{formatRelative(a.lastSyncedAt, undefined, true)}</td>
                 <td className="py-3 pr-4 text-xs text-fg-muted">
                   {a.scopes.includes("instagram_business_content_publish") ? "Publicação" : <span className="text-warning">Sem publicação</span>}
                   {a.scopes.includes("instagram_business_manage_insights") && " · Insights"}

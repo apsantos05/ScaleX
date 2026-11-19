@@ -8,7 +8,7 @@ export async function GET(_req: NextRequest, { params }: RouteContext<"/api/medi
   try {
     if (getDataMode() === "supabase") return NextResponse.json({ error: "Use URLs assinadas." }, { status: 400 });
     const { id } = await params;
-    const ctx = await authorize("viewer");
+    const ctx = await authorize("viewer", { allowLocked: true });
     const [media] = await ctx.repo.getMediaByIds(ctx.workspace.id, [id]);
     if (!media) return NextResponse.json({ error: "Não encontrado." }, { status: 404 });
     const data = await readLocalFile(media.storagePath);

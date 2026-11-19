@@ -15,7 +15,7 @@ export default async function SignUpPage({ searchParams }: PageProps<"/signup">)
   return (
     <>
       <h1 className="text-lg font-semibold">Crie sua conta</h1>
-      <p className="mb-6 mt-1 text-sm text-fg-muted">Comece no plano Trial, sem cartão.</p>
+      <p className="mb-6 mt-1 text-sm text-fg-muted">Teste o plano Pro grátis por 3 dias, sem cartão.</p>
       <SignUpForm next={next} />
       <p className="mt-6 text-center text-sm text-fg-muted">
         Já tem conta?{" "}

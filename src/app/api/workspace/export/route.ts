@@ -4,7 +4,7 @@ import { authorize, AuthorizationError } from "@/lib/auth/context";
 /** LGPD: exportação dos dados do workspace (sem credenciais). Restrito ao proprietário. */
 export async function GET() {
   try {
-    const ctx = await authorize("owner");
+    const ctx = await authorize("owner", { allowLocked: true });
     const ws = ctx.workspace.id;
     const [members, accounts, media, captions, campaigns, targets, audit] = await Promise.all([
       ctx.repo.listMembers(ws),

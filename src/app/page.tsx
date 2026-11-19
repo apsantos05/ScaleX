@@ -247,9 +247,9 @@ export default function LandingPage() {
         <section id="planos" className="scroll-mt-20 border-t border-border bg-surface/40">
           <div className="mx-auto max-w-6xl px-5 py-24">
             <h2 className="text-3xl font-semibold tracking-tight">Planos que acompanham sua operação.</h2>
-            <p className="mt-3 text-fg-muted">Valores de referência. Cobrança ainda não habilitada — comece pelo trial.</p>
-            <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              {Object.values(PLANS).map((p) => (
+            <p className="mt-3 text-fg-muted">Teste o plano Pro grátis por 3 dias, sem cartão. Depois, escolha o plano que acompanha sua operação.</p>
+            <div className="mt-12 grid gap-4 md:grid-cols-3">
+              {Object.values(PLANS).filter((p) => p.id !== "trial").map((p) => (
                 <div
                   key={p.id}
                   className={`flex flex-col rounded-2xl border p-6 ${p.id === "pro" ? "border-brand/50 bg-surface glow-brand" : "border-border bg-bg"}`}
@@ -270,7 +270,7 @@ export default function LandingPage() {
                     ))}
                   </ul>
                   <Button asChild variant={p.id === "pro" ? "primary" : "secondary"} className="mt-6">
-                    <Link href="/signup">Começar</Link>
+                    <Link href="/signup">{p.id === "pro" ? "Testar 3 dias grátis" : "Começar"}</Link>
                   </Button>
                 </div>
               ))}

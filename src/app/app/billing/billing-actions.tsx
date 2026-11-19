@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmButton } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toast";
 import { cancelSubscriptionAction, startCheckoutAction } from "../_actions/billing";
+import { switchWorkspaceAction } from "../_actions/workspace";
 import { useRouter } from "next/navigation";
 
 /** Abre o checkout hospedado da Cakto para o plano escolhido. */
@@ -40,8 +41,8 @@ export function CancelSubscriptionButton({ periodEnd }: { periodEnd: string | nu
       title="Cancelar assinatura?"
       description={
         periodEnd
-          ? `As próximas cobranças serão canceladas. Seu plano continua ativo até ${new Date(periodEnd).toLocaleDateString("pt-BR")} e depois volta ao Trial.`
-          : "As próximas cobranças serão canceladas e o workspace voltará ao Trial ao fim do período pago."
+          ? `As próximas cobranças serão canceladas. Seu plano continua ativo até ${new Date(periodEnd).toLocaleDateString("pt-BR")}; depois disso, o acesso fica bloqueado até uma nova assinatura.`
+          : "As próximas cobranças serão canceladas. Ao fim do período pago, o acesso fica bloqueado até uma nova assinatura."
       }
       confirmLabel="Cancelar assinatura"
       onConfirm={async () => {
@@ -56,5 +57,27 @@ export function CancelSubscriptionButton({ periodEnd }: { periodEnd: string | nu
         </Button>
       )}
     />
+  );
+}
+
+/** Troca para outro workspace (usado no bloqueio, onde o menu lateral fica inacessível). */
+export function SwitchWorkspaceButton({ id, name }: { id: string; name: string }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      className="font-medium text-fg hover:text-brand disabled:opacity-60"
+      onClick={async () => {
+        setBusy(true);
+        const r = await switchWorkspaceAction(id);
+        setBusy(false);
+        if (!r.ok) toast.error(r.error);
+        else router.refresh();
+      }}
+    >
+      Ir para {name}
+    </button>
   );
 }

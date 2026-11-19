@@ -18,7 +18,7 @@ const planSchema = z.enum(["starter", "pro", "scale"]);
  */
 export async function startCheckoutAction(plan: string): Promise<Result<{ url: string }>> {
   try {
-    const ctx = await authorize("owner");
+    const ctx = await authorize("owner", { allowLocked: true });
     if (getDataMode() !== "supabase" || !isBillingConfigured()) return { ok: false, error: "A cobrança ainda não está habilitada neste ambiente." };
     const parsed = planSchema.safeParse(plan);
     if (!parsed.success) return { ok: false, error: "Plano inválido." };
@@ -43,7 +43,7 @@ export async function startCheckoutAction(plan: string): Promise<Result<{ url: s
 /** Cancela as cobranças futuras na Cakto. O plano pago continua até o fim do período já pago. */
 export async function cancelSubscriptionAction(): Promise<Result<{ message: string }>> {
   try {
-    const ctx = await authorize("owner");
+    const ctx = await authorize("owner", { allowLocked: true });
     const sub = await store.getSubscription(ctx.workspace.id);
     if (!sub || sub.provider !== "cakto" || !sub.providerSubscriptionId || sub.status === "canceled") {
       return { ok: false, error: "Não há assinatura ativa para cancelar." };

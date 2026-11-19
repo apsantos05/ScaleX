@@ -11,6 +11,8 @@ export type Workspace = {
   name: string;
   slug: string;
   plan: PlanId;
+  /** Preenchido enquanto o workspace está no teste grátis do Pro; null depois do pagamento. */
+  trialEndsAt?: ISODate | null;
   createdAt: ISODate;
 };
 

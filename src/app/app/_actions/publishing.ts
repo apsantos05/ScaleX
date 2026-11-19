@@ -44,7 +44,7 @@ export async function rescheduleTargetAction(id: string, whenIso: string): Promi
 
 export async function getTargetLogsAction(id: string) {
   try {
-    const ctx = await authorize("viewer");
+    const ctx = await authorize("viewer", { allowLocked: true });
     const logs = await ctx.repo.listLogs(ctx.workspace.id, id);
     return { ok: true as const, data: logs };
   } catch (e) {

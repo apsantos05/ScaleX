@@ -12,19 +12,19 @@ export type PlanLimits = {
 };
 
 /**
- * Catálogo de planos (valores provisórios — definir comercialmente).
- * Nenhuma cobrança real é feita: o gateway de pagamento ainda não está integrado.
+ * Catálogo de planos. "trial" é o estado sem plano (workspace bloqueado): o teste grátis
+ * de 3 dias usa o plano Pro com prazo (workspaces.trial_ends_at).
  */
 export const PLANS: Record<PlanId, PlanLimits> = {
   trial: {
     id: "trial",
-    name: "Trial",
+    name: "Sem plano",
     priceBRL: 0,
     maxAccounts: 3,
     maxScheduledPerMonth: 60,
     maxStorageMb: 500,
     maxMembers: 2,
-    features: ["Até 3 contas", "60 publicações/mês", "Biblioteca 500 MB"],
+    features: ["Acesso bloqueado até a assinatura de um plano"],
   },
   starter: {
     id: "starter",

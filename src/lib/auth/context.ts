@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { getRepo } from "@/lib/data";
+import { workspaceAccess } from "@/lib/domain/access";
+import { getDataMode } from "@/lib/env";
 import type { WorkspaceRepository } from "@/lib/data/repository";
 import type { Role, User, Workspace, WorkspaceWithRole } from "@/lib/domain/types";
 import { getCurrentUser } from "./session";
@@ -46,11 +48,22 @@ export class AuthorizationError extends Error {
   }
 }
 
+/** Workspace sem plano ou com o teste vencido: só pode assinar (e exportar/desconectar dados). */
+export function isWorkspaceLocked(ws: Workspace): boolean {
+  return getDataMode() === "supabase" && workspaceAccess(ws).state === "locked";
+}
+
+export class WorkspaceLockedError extends AuthorizationError {
+  constructor() {
+    super("Seu teste grátis terminou. Assine um plano para continuar usando a ScaleX.");
+  }
+}
+
 /**
  * Autorização para mutações (Server Actions / Route Handlers): valida sessão, membership
  * revalidada no banco e papel mínimo. Nunca confiar em workspaceId vindo do cliente.
  */
-export async function authorize(min: Role = "editor"): Promise<AppContext> {
+export async function authorize(min: Role = "editor", opts: { allowLocked?: boolean } = {}): Promise<AppContext> {
   const user = await getCurrentUser();
   if (!user) throw new AuthorizationError("Sessão expirada. Entre novamente.");
   const repo = await getRepo();
@@ -60,5 +73,6 @@ export async function authorize(min: Role = "editor"): Promise<AppContext> {
   if (!active) throw new AuthorizationError("Nenhum workspace ativo.");
   const membership = await repo.getMembership(active.id, user.id);
   if (!membership || !roleAtLeast(membership.role, min)) throw new AuthorizationError();
+  if (!opts.allowLocked && isWorkspaceLocked(membership.workspace)) throw new WorkspaceLockedError();
   return { user, workspace: membership.workspace, role: membership.role, workspaces, repo };
 }

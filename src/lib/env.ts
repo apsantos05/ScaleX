@@ -14,6 +14,17 @@ export function isDemoMode(): boolean {
   return getDataMode() === "demo";
 }
 
+/**
+ * Implantado em ambiente serverless (Vercel) sem Supabase configurado: o modo demo não funciona ali
+ * porque o disco é somente leitura. Usado para exibir um erro de configuração claro.
+ */
+export function isMisconfiguredDeployment(): boolean {
+  return isDemoMode() && (process.env.VERCEL === "1" || !!process.env.VERCEL_ENV);
+}
+
+export const MISCONFIGURED_MESSAGE =
+  "Servidor sem configuração do Supabase. Defina NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY e SUPABASE_SERVICE_ROLE_KEY nas variáveis de ambiente da Vercel e faça um novo deploy.";
+
 export function appUrl(): string {
   return (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
 }

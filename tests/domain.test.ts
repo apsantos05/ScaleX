@@ -92,3 +92,18 @@ describe("segurança", () => {
     expect(backoffMs(20, () => 0)).toBe(30 * 60_000);
   });
 });
+
+describe("detecção de deploy mal configurado", () => {
+  it("acusa Vercel sem Supabase e aceita Vercel com Supabase", async () => {
+    const { isMisconfiguredDeployment } = await import("@/lib/env");
+    const saved = { ...process.env };
+    process.env.VERCEL = "1";
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    expect(isMisconfiguredDeployment()).toBe(true);
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://x.supabase.co";
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "k";
+    expect(isMisconfiguredDeployment()).toBe(false);
+    process.env = saved;
+  });
+});

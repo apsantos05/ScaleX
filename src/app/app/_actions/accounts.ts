@@ -79,7 +79,7 @@ export async function syncAccountsAction(ids: string[]): Promise<Result<{ synced
         if (!adapter) throw new Error("Integração não configurada.");
         const cred = await system.getCredential(id);
         if (!cred) throw new ProviderError("Credencial ausente.", "auth");
-        const profile = await adapter.getProfile(decryptSecret(cred.ciphertext));
+        const profile = await adapter.getProfile(decryptSecret(cred.ciphertext), acc.providerAccountId);
         await ctx.repo.updateAccounts(ctx.workspace.id, [id], {
           username: profile.username,
           displayName: profile.displayName,

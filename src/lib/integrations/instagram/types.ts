@@ -39,7 +39,8 @@ export type MediaInsights = {
  */
 export interface InstagramAdapter {
   readonly simulated: boolean;
-  getProfile(accessToken: string): Promise<InstagramProfile>;
+  /** Perfil da conta. No login unificado o token é de um usuário do sistema, então o ID da conta é obrigatório. */
+  getProfile(accessToken: string, igUserId?: string): Promise<InstagramProfile>;
   createContainer(
     accessToken: string,
     igUserId: string,

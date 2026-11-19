@@ -109,8 +109,15 @@ export function SignUpForm({ next }: { next?: string }) {
         <label className="flex items-start gap-2.5 text-xs text-fg-muted">
           <Checkbox className="mt-0.5" {...form.register("acceptTerms")} aria-invalid={!!termsErr} />
           <span>
-            Aceito os Termos de Uso e a Política de Privacidade, e declaro que publicarei apenas conteúdo permitido
-            pelas plataformas e com direitos de uso.
+            Aceito os{" "}
+            <a href="/termos" target="_blank" rel="noopener" className="text-fg underline underline-offset-2">
+              Termos de Uso
+            </a>{" "}
+            e a{" "}
+            <a href="/privacidade" target="_blank" rel="noopener" className="text-fg underline underline-offset-2">
+              Política de Privacidade
+            </a>
+            , e declaro que publicarei apenas conteúdo permitido pelas plataformas e com direitos de uso.
           </span>
         </label>
         {termsErr && <p className="mt-1 text-xs text-danger" role="alert">{termsErr}</p>}

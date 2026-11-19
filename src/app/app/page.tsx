@@ -84,9 +84,11 @@ export default async function DashboardPage() {
             </Alert>
           )}
           {!isInstagramConfigured() && (
-            <Alert tone="info" title="Integração oficial do Instagram ainda não configurada">
-              Defina <code className="font-mono">INSTAGRAM_APP_ID</code>, <code className="font-mono">INSTAGRAM_APP_SECRET</code> e{" "}
-              <code className="font-mono">TOKEN_ENCRYPTION_KEY</code> para conectar contas reais. Contas demo continuam funcionando.
+            <Alert tone="info" title="Conexão com o Instagram em ativação">
+              Enquanto a integração oficial é liberada, use as contas <strong>Demo</strong> para testar todo o fluxo — nada é publicado de verdade.
+              {process.env.NODE_ENV === "development" && (
+                <span className="mt-1 block font-mono text-[11px] text-fg-subtle">dev: defina INSTAGRAM_APP_ID, INSTAGRAM_APP_SECRET e TOKEN_ENCRYPTION_KEY</span>
+              )}
             </Alert>
           )}
         </section>
@@ -97,7 +99,7 @@ export default async function DashboardPage() {
         <StatCard label="Contas disponíveis" value={active.length} hint="Aptas a publicar" />
         <StatCard label="Agendadas / na fila" value={pending.length} />
         <StatCard label="Publicadas" value={published.length} hint={published.some((t) => t.simulated) ? "Inclui simulações (demo)" : "Últimos 30 dias"} tone="success" />
-        <StatCard label="Com erro" value={failed.length} tone="danger" />
+        <StatCard label="Com erro" value={failed.length} tone="danger" className="col-span-2 md:col-span-1" />
       </section>
 
       <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">

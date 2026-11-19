@@ -56,21 +56,21 @@ export function HistoryTable({
   return (
     <div className="grid grid-cols-1 gap-6">
       <Card>
-        <div className="grid gap-2 border-b border-border p-4 md:grid-cols-[1fr_repeat(3,170px)]">
-          <div className="relative">
+        <div className="grid grid-cols-3 gap-2 border-b border-border p-4 md:grid-cols-[1fr_repeat(3,170px)]">
+          <div className="relative col-span-3 md:col-span-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-subtle" aria-hidden />
             <Input className="pl-9" placeholder="Buscar legenda, conta ou erro" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} aria-label="Buscar" />
           </div>
           <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(0); }} aria-label="Status">
-            <option value="">Todos status</option>
+            <option value="">Status</option>
             {ALL_STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
           </Select>
           <Select value={account} onChange={(e) => { setAccount(e.target.value); setPage(0); }} aria-label="Conta">
-            <option value="">Todas as contas</option>
+            <option value="">Conta</option>
             {accounts.map((a) => <option key={a.id} value={a.id}>@{a.username}</option>)}
           </Select>
           <Select value={format} onChange={(e) => { setFormat(e.target.value); setPage(0); }} aria-label="Formato">
-            <option value="">Todos formatos</option>
+            <option value="">Formato</option>
             {["FEED", "REELS", "STORIES", "CAROUSEL"].map((f) => <option key={f}>{f}</option>)}
           </Select>
         </div>
@@ -102,7 +102,38 @@ export function HistoryTable({
         {filtered.length === 0 ? (
           <EmptyState icon={History} title="Nada por aqui" description="Nenhuma execução corresponde aos filtros." />
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          <ul className="divide-y divide-border/60 md:hidden">
+            {rows.map((t) => (
+              <TargetDialog key={t.id} target={t} canEdit={canEdit}>
+                {(open) => (
+                  <li className="flex items-start gap-3 px-4 py-3">
+                    {canEdit && (
+                      <Checkbox
+                        className="mt-2"
+                        checked={selected.has(t.id)}
+                        aria-label={`Selecionar publicação em @${t.accountUsername}`}
+                        onChange={() => setSelected((s) => { const n = new Set(s); if (n.has(t.id)) n.delete(t.id); else n.add(t.id); return n; })}
+                      />
+                    )}
+                    <button onClick={open} className="flex min-w-0 flex-1 items-start gap-3 text-left" aria-label={`Abrir detalhes da publicação em @${t.accountUsername}`}>
+                      <Avatar src={t.accountAvatarUrl} name={t.accountUsername} size={32} />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center justify-between gap-2">
+                          <span className="truncate text-sm font-medium">@{t.accountUsername}</span>
+                          <StatusBadge status={t.status} simulated={t.simulated} />
+                        </span>
+                        <span className="mt-0.5 block truncate text-xs text-fg-muted">{t.caption || "Sem legenda"}</span>
+                        {t.lastError && <span className="block truncate text-xs text-danger">{t.lastError}</span>}
+                        <span className="mt-1 block text-[11px] text-fg-subtle">{t.format} · {formatDateTime(t.scheduledAt)} · {t.attempts}/{t.maxAttempts} tentativas</span>
+                      </span>
+                    </button>
+                  </li>
+                )}
+              </TargetDialog>
+            ))}
+          </ul>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[860px] text-sm">
               <thead className="text-left text-xs text-fg-subtle">
                 <tr className="border-b border-border">
@@ -151,6 +182,7 @@ export function HistoryTable({
               </tbody>
             </table>
           </div>
+          </>
         )}
         {filtered.length > PAGE && (
           <div className="flex items-center justify-between border-t border-border px-4 py-3 text-xs text-fg-muted">

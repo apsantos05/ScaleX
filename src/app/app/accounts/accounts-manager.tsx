@@ -54,6 +54,17 @@ export function AccountsManager({
   const someSelected = filtered.some((a) => selected.has(a.id));
   const ids = Array.from(selected);
 
+  function toggleAllVisible() {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      for (const a of filtered) {
+        if (allVisibleSelected) next.delete(a.id);
+        else next.add(a.id);
+      }
+      return next;
+    });
+  }
+
   function toggle(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -93,19 +104,19 @@ export function AccountsManager({
         </div>
         <div className="grid grid-cols-3 gap-2 lg:w-[480px]">
           <Select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filtrar por status">
-            <option value="">Todos status</option>
+            <option value="">Status</option>
             <option value="active">Conectadas</option>
             <option value="needs_reauth">Reconectar</option>
             <option value="error">Com erro</option>
           </Select>
           <Select value={group} onChange={(e) => setGroup(e.target.value)} aria-label="Filtrar por grupo">
-            <option value="">Todos grupos</option>
+            <option value="">Grupo</option>
             {groups.map((g) => (
               <option key={g}>{g}</option>
             ))}
           </Select>
           <Select value={tag} onChange={(e) => setTag(e.target.value)} aria-label="Filtrar por etiqueta">
-            <option value="">Todas etiquetas</option>
+            <option value="">Etiqueta</option>
             {tags.map((t) => (
               <option key={t}>{t}</option>
             ))}
@@ -156,7 +167,36 @@ export function AccountsManager({
         </div>
       )}
 
-      <div className="overflow-x-auto">
+      {filtered.length > 0 && (
+        <label className="flex items-center gap-3 border-b border-border/60 px-4 py-2.5 text-xs text-fg-muted md:hidden">
+          <Checkbox checked={allVisibleSelected} onChange={toggleAllVisible} />
+          Selecionar todas ({filtered.length})
+        </label>
+      )}
+      <ul className="divide-y divide-border/60 md:hidden">
+        {filtered.map((a) => (
+          <li key={a.id} className="flex items-start gap-3 px-4 py-3 has-[:checked]:bg-brand/[0.04]">
+            <Checkbox className="mt-2.5" checked={selected.has(a.id)} onChange={() => toggle(a.id)} aria-label={`Selecionar @${a.username}`} />
+            <Avatar src={a.avatarUrl} name={a.username} size={36} />
+            <div className="min-w-0 flex-1">
+              <p className="flex items-center gap-1.5 truncate text-sm font-medium">
+                <span className="truncate">@{a.username}</span>
+                {a.isDemo && <Badge tone="warning">Demo</Badge>}
+              </p>
+              <p className="truncate text-xs text-fg-subtle">{a.displayName} · sinc. {formatRelative(a.lastSyncedAt, undefined, true)}</p>
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                <AccountStatusBadge status={a.status} />
+                {a.group && <Badge tone="info">{a.group}</Badge>}
+                {a.tags.map((t) => (
+                  <Badge key={t}>#{t}</Badge>
+                ))}
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[760px] text-sm">
           <thead className="text-left text-xs text-fg-subtle">
             <tr className="border-b border-border">
@@ -167,16 +207,7 @@ export function AccountsManager({
                   ref={(el) => {
                     if (el) el.indeterminate = someSelected && !allVisibleSelected;
                   }}
-                  onChange={() =>
-                    setSelected((prev) => {
-                      const next = new Set(prev);
-                      for (const a of filtered) {
-                        if (allVisibleSelected) next.delete(a.id);
-                        else next.add(a.id);
-                      }
-                      return next;
-                    })
-                  }
+                  onChange={toggleAllVisible}
                 />
               </th>
               <th className="py-2.5 font-medium">Conta</th>
@@ -224,7 +255,7 @@ export function AccountsManager({
                   </div>
                 </td>
                 <td className="py-3 tabular-nums text-fg-muted">{formatNumber(a.followersCount)}</td>
-                <td className="py-3 text-fg-muted">{formatRelative(a.lastSyncedAt)}</td>
+                <td className="py-3 text-fg-muted">{formatRelative(a.lastSyncedAt, undefined, true)}</td>
                 <td className="py-3 pr-4 text-xs text-fg-muted">
                   {a.scopes.includes("instagram_business_content_publish") ? "Publicação" : <span className="text-warning">Sem publicação</span>}
                   {a.scopes.includes("instagram_business_manage_insights") && " · Insights"}
@@ -233,8 +264,9 @@ export function AccountsManager({
             ))}
           </tbody>
         </table>
-        {filtered.length === 0 && <p className="p-8 text-center text-sm text-fg-muted">Nenhuma conta corresponde aos filtros.</p>}
       </div>
+
+      {filtered.length === 0 && <p className="p-8 text-center text-sm text-fg-muted">Nenhuma conta corresponde aos filtros.</p>}
 
       <Dialog
         open={organize !== null}

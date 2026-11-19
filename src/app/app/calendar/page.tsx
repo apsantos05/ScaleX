@@ -92,7 +92,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/app/cal
 
   return (
     <>
-      <PageHeader title="Calendário editorial" description={`${targets.length} publicação(ões) no período · fuso America/Sao_Paulo`} />
+      <PageHeader title="Calendário editorial" description={`${targets.length} publicação(ões) no período · horário de Brasília`} />
       <Card className="overflow-hidden">
         <div className="flex flex-col gap-3 border-b border-border p-4 xl:flex-row xl:items-center">
           <div className="flex items-center gap-2">
@@ -124,11 +124,17 @@ export default async function CalendarPage({ searchParams }: PageProps<"/app/cal
                 const items = byDay.get(k) ?? [];
                 const inMonth = civil(d).m === c.m;
                 return (
-                  <div key={k} className={cn("min-h-28 border-b border-r border-border/60 p-1.5 [&:nth-child(7n)]:border-r-0", !inMonth && "bg-bg/40")}>
+                  <div key={k} className={cn("min-h-14 border-b border-r border-border/60 p-1 md:min-h-28 md:p-1.5 [&:nth-child(7n)]:border-r-0", !inMonth && "bg-bg/40")}>
                     <Link href={qs({ view: "day", date: k })} className={cn("mb-1 inline-grid size-6 place-items-center rounded-md text-xs", k === todayKey ? "bg-brand font-semibold text-white" : inMonth ? "text-fg-muted hover:bg-surface-2" : "text-fg-subtle")}>
                       {civil(d).d}
                     </Link>
-                    <ul className="space-y-1">
+                    {items.length > 0 && (
+                      <Link href={qs({ view: "day", date: k })} className="flex items-center gap-1 px-1 md:hidden" aria-label={items.length + " publicação(ões)"}>
+                        <span className="size-1.5 rounded-full bg-brand" aria-hidden />
+                        <span className="text-[10px] tabular-nums text-fg-muted">{items.length}</span>
+                      </Link>
+                    )}
+                    <ul className="hidden space-y-1 md:block">
                       {items.slice(0, 3).map((t) => <li key={t.id}><TargetChip target={t} color={t.campaignId ? colorOf[t.campaignId] : undefined} canEdit={canEdit} compact /></li>)}
                       {items.length > 3 && <li><Link href={qs({ view: "day", date: k })} className="px-1 text-[11px] text-fg-muted hover:text-fg">+{items.length - 3} mais</Link></li>}
                     </ul>
@@ -136,6 +142,22 @@ export default async function CalendarPage({ searchParams }: PageProps<"/app/cal
                 );
               })}
             </div>
+            <section aria-label="Agenda do mês" className="border-t border-border md:hidden">
+              {targets.length === 0 ? (
+                <p className="p-6 text-center text-sm text-fg-muted">Sem publicações neste período.</p>
+              ) : (
+                Array.from(byDay.entries()).map(([k, items]) => (
+                  <div key={k} className="border-b border-border/60 px-4 py-3 last:border-0">
+                    <h3 className={cn("mb-2 text-xs font-medium", k === todayKey ? "text-brand" : "text-fg-muted")}>
+                      {new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "2-digit", month: "long", timeZone: TZ }).format(fromCivil(+k.slice(0, 4), +k.slice(5, 7) - 1, +k.slice(8, 10)))}
+                    </h3>
+                    <ul className="space-y-1.5">
+                      {items.map((t) => <li key={t.id}><TargetChip target={t} color={t.campaignId ? colorOf[t.campaignId] : undefined} canEdit={canEdit} /></li>)}
+                    </ul>
+                  </div>
+                ))
+              )}
+            </section>
           </div>
         ) : (
           <div className={cn("grid", view === "week" ? "grid-cols-1 md:grid-cols-7" : "grid-cols-1")}>

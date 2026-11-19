@@ -20,20 +20,30 @@ export function StackedBars({
   height?: number;
   caption: string;
 }) {
-  const max = Math.max(1, ...data.map((d) => d.values.reduce((s, v) => s + v.value, 0)));
+  const peak = Math.max(0, ...data.map((d) => d.values.reduce((s, v) => s + v.value, 0)));
+  // Escala "redonda" para que um único dia com poucos itens não ocupe a altura toda.
+  const max = Math.max(4, Math.ceil(peak / 4) * 4);
   return (
     <figure>
-      <div className="flex items-end gap-1.5" style={{ height }} aria-hidden>
+      <div className="relative" style={{ height }} aria-hidden>
+      <div className="pointer-events-none absolute inset-0 flex flex-col justify-between">
+        {[max, (max * 3) / 4, max / 2, max / 4, 0].map((v) => (
+          <div key={v} className="flex items-center gap-2">
+            <span className="w-5 text-right text-[9px] tabular-nums text-fg-subtle">{Number.isInteger(v) ? v : ""}</span>
+            <span className="h-px flex-1 bg-border/50" />
+          </div>
+        ))}
+      </div>
+      <div className="absolute inset-y-0 left-7 right-0 flex items-end gap-1 sm:gap-1.5">
         {data.map((d) => {
           const total = d.values.reduce((s, v) => s + v.value, 0);
           return (
-            <div key={d.label} className="group relative flex h-full flex-1 flex-col justify-end">
-              <div className="flex flex-col-reverse overflow-hidden rounded-t-[3px]" style={{ height: `${(total / max) * 100}%` }}>
+            <div key={d.label} className="group relative flex h-full flex-1 flex-col items-center justify-end">
+              <div className="flex w-full max-w-7 flex-col-reverse overflow-hidden rounded-t-[4px]" style={{ height: `${(total / max) * 100}%` }}>
                 {d.values.map((v) => (
                   <div key={v.key} style={{ flexGrow: v.value, background: SERIES_COLOR[v.key] ?? "var(--fg-muted)" }} />
                 ))}
               </div>
-              {total === 0 && <div className="h-px bg-border" />}
               <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-md border border-border bg-surface-3 px-2 py-1 text-[11px] group-hover:block">
                 <p className="font-medium">{d.label}</p>
                 {d.values.map((v) => (
@@ -46,7 +56,8 @@ export function StackedBars({
           );
         })}
       </div>
-      <div className="mt-2 flex justify-between text-[10px] text-fg-subtle" aria-hidden>
+      </div>
+      <div className="mt-2 flex justify-between pl-7 text-[10px] text-fg-subtle" aria-hidden>
         <span>{data[0]?.label}</span>
         <span>{data[data.length - 1]?.label}</span>
       </div>
@@ -103,14 +114,16 @@ export function StatCard({
   value,
   hint,
   tone = "default",
+  className,
 }: {
   label: string;
   value: string | number;
   hint?: string;
   tone?: "default" | "danger" | "success";
+  className?: string;
 }) {
   return (
-    <div className="rounded-[var(--radius-card)] border border-border/70 bg-surface p-4">
+    <div className={cn("rounded-[var(--radius-card)] border border-border/70 bg-surface p-4", className)}>
       <p className="text-xs text-fg-muted">{label}</p>
       <p
         className={cn(

@@ -22,6 +22,6 @@ export function MediaThumb({ media, url, className }: { media: Pick<MediaAsset, 
   }
   return (
     // eslint-disable-next-line @next/next/no-img-element -- URLs privadas/assinadas; otimização do next/image não se aplica
-    <img src={url} alt={media.fileName} loading="lazy" className={cn("object-cover", className)} />
+    <img src={url} alt={media.fileName} loading="lazy" decoding="async" className={cn("bg-surface-2 object-cover", className)} />
   );
 }

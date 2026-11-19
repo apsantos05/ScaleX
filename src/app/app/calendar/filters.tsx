@@ -17,19 +17,19 @@ export function CalendarFilters({ accounts, campaigns, statuses }: { accounts: O
     router.push(`${pathname}?${p.toString()}`);
   };
   return (
-    <>
-      <Select className="h-8 w-40 text-xs" value={sp.get("account") ?? ""} onChange={(e) => set("account", e.target.value)} aria-label="Filtrar conta">
-        <option value="">Todas as contas</option>
+    <div className="grid w-full grid-cols-3 gap-2 sm:flex sm:w-auto">
+      <Select className="h-9 text-xs sm:w-40" value={sp.get("account") ?? ""} onChange={(e) => set("account", e.target.value)} aria-label="Filtrar conta">
+        <option value="">Conta</option>
         {accounts.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
       </Select>
-      <Select className="h-8 w-40 text-xs" value={sp.get("campaign") ?? ""} onChange={(e) => set("campaign", e.target.value)} aria-label="Filtrar campanha">
-        <option value="">Todas as campanhas</option>
+      <Select className="h-9 text-xs sm:w-40" value={sp.get("campaign") ?? ""} onChange={(e) => set("campaign", e.target.value)} aria-label="Filtrar campanha">
+        <option value="">Campanha</option>
         {campaigns.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
       </Select>
-      <Select className="h-8 w-36 text-xs" value={sp.get("status") ?? ""} onChange={(e) => set("status", e.target.value)} aria-label="Filtrar status">
-        <option value="">Todos status</option>
+      <Select className="h-9 text-xs sm:w-36" value={sp.get("status") ?? ""} onChange={(e) => set("status", e.target.value)} aria-label="Filtrar status">
+        <option value="">Status</option>
         {statuses.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
       </Select>
-    </>
+    </div>
   );
 }

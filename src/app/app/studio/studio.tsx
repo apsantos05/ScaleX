@@ -178,7 +178,7 @@ export function Studio({
   const previewAccount = selectedAccounts[0];
 
   return (
-    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_360px]">
+    <div className="grid grid-cols-1 gap-6 pb-20 xl:grid-cols-[1fr_360px] xl:pb-0">
       <div className="grid grid-cols-1 gap-4">
         <Step n={1} title="Formato">
           <div role="radiogroup" aria-label="Formato da publicação" className="grid grid-cols-2 gap-2 md:grid-cols-4">
@@ -402,6 +402,31 @@ export function Studio({
           </div>
         </Card>
       </aside>
+
+      {/* Celular: resumo + ação sempre visíveis acima da navegação inferior */}
+      <div className="pb-safe fixed inset-x-0 bottom-16 z-30 border-t border-border bg-surface/95 px-4 py-3 backdrop-blur-lg lg:bottom-0 xl:hidden">
+        <div className="mx-auto flex max-w-3xl items-center gap-3">
+          <div className="min-w-0 flex-1 text-xs">
+            <p className="font-medium text-fg">
+              {selectedMedia.length} mídia{selectedMedia.length === 1 ? "" : "s"} · {accountIds.size} conta{accountIds.size === 1 ? "" : "s"}
+            </p>
+            <p className={cn("truncate", errors.length && selectedMedia.length ? "text-danger" : "text-fg-subtle")}>
+              {errors.length && selectedMedia.length
+                ? errors[0]!.message
+                : unlicensed.length
+                  ? "Confirme os direitos de uso na Biblioteca"
+                  : publishNow
+                    ? "Publicar agora"
+                    : whenInvalid
+                      ? "Escolha um horário futuro"
+                      : formatDateTime(whenDate.toISOString())}
+            </p>
+          </div>
+          <Button disabled={!canSubmit} loading={submitting} onClick={submit}>
+            {publishNow ? "Publicar" : "Agendar"}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

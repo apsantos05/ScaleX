@@ -14,7 +14,7 @@ export function Textarea({ className, ...props }: ComponentProps<"textarea">) {
 
 export function Select({ className, children, ...props }: ComponentProps<"select">) {
   return (
-    <select className={cn(fieldBase, "h-10 appearance-none bg-[length:12px] pr-8", className)} {...props}>
+    <select className={cn(fieldBase, "sx-select h-10 cursor-pointer appearance-none pr-7", className)} {...props}>
       {children}
     </select>
   );

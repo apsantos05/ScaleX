@@ -42,7 +42,7 @@ export function Toaster() {
     () => EMPTY,
   );
   return (
-    <div aria-live="polite" className="pointer-events-none fixed bottom-4 right-4 z-[60] flex w-[min(380px,calc(100vw-2rem))] flex-col gap-2">
+    <div aria-live="polite" className="pointer-events-none fixed bottom-20 right-4 z-[60] lg:bottom-4 flex w-[min(380px,calc(100vw-2rem))] flex-col gap-2">
       {list.map((t) => {
         const Icon = ICON[t.tone];
         return (

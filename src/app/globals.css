@@ -87,3 +87,20 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* Seta dos selects (appearance-none remove a nativa) */
+.sx-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239898A3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 13px;
+}
+.sx-select option { background: var(--surface-2); color: var(--fg); }
+
+/* iOS dá zoom ao focar campos com fonte < 16px: no celular, forçamos 16px */
+@media (max-width: 639px) {
+  input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 16px !important; }
+}
+
+/* Área segura (notch / barra de gestos) para a navegação inferior */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }

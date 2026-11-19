@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MoreHorizontal,
   Plus,
   Settings,
   SquarePen,
@@ -21,7 +22,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { DropdownMenu } from "radix-ui";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/primitives";
 import { toast } from "@/components/ui/toast";
@@ -124,6 +125,65 @@ function WorkspaceSwitcher({ current, workspaces }: { current: WS; workspaces: W
   );
 }
 
+const MOBILE_TABS = [
+  { href: "/app", label: "Início", icon: LayoutDashboard, primary: false },
+  { href: "/app/accounts", label: "Contas", icon: Users, primary: false },
+  { href: "/app/studio", label: "Publicar", icon: SquarePen, primary: true },
+  { href: "/app/calendar", label: "Agenda", icon: CalendarDays, primary: false },
+];
+
+/** Navegação inferior no celular: ações mais frequentes ao alcance do polegar. */
+function MobileTabBar({ onMore }: { onMore: () => void }) {
+  const pathname = usePathname();
+  return (
+    <nav
+      aria-label="Navegação rápida"
+      className="pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-border bg-bg/90 backdrop-blur-lg lg:hidden"
+    >
+      <ul className="mx-auto grid h-16 max-w-md grid-cols-5">
+        {MOBILE_TABS.map(({ href, label, icon: Icon, primary }) => {
+          const active = href === "/app" ? pathname === "/app" : pathname.startsWith(href);
+          return (
+            <li key={href} className="grid">
+              <Link
+                href={href}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors",
+                  active ? "text-fg" : "text-fg-subtle hover:text-fg-muted",
+                )}
+              >
+                {primary ? (
+                  <span
+                    className={cn(
+                      "grid size-9 place-items-center rounded-xl bg-brand text-white shadow-[0_6px_20px_-6px_rgb(255_48_69/0.7)]",
+                      active && "ring-2 ring-brand/40 ring-offset-2 ring-offset-bg",
+                    )}
+                  >
+                    <Icon className="size-[18px]" aria-hidden />
+                  </span>
+                ) : (
+                  <Icon className={cn("size-5", active && "text-brand")} aria-hidden />
+                )}
+                {primary ? <span className="sr-only">{label}</span> : label}
+              </Link>
+            </li>
+          );
+        })}
+        <li className="grid">
+          <button
+            onClick={onMore}
+            className="flex flex-col items-center justify-center gap-1 text-[10px] font-medium text-fg-subtle hover:text-fg-muted"
+          >
+            <MoreHorizontal className="size-5" aria-hidden />
+            Mais
+          </button>
+        </li>
+      </ul>
+    </nav>
+  );
+}
+
 export function AppShell({
   user,
   workspace,
@@ -141,11 +201,25 @@ export function AppShell({
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // Gaveta móvel: Esc fecha e o fundo não rola enquanto aberta.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [mobileOpen]);
 
   const sidebar = (
-    <div className="flex h-full flex-col gap-4 py-4">
+    <div className="flex h-full flex-col gap-4 overflow-y-auto py-4">
       <div className="flex items-center justify-between px-5">
-        <Link href="/app" aria-label="ScaleX — dashboard">
+        <Link href="/app" aria-label="ScaleX — dashboard" onClick={() => setMobileOpen(false)}>
           <Logo />
         </Link>
       </div>
@@ -171,14 +245,21 @@ export function AppShell({
   );
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[248px_1fr]">
-      <aside className="sticky top-0 hidden h-screen border-r border-border bg-surface/50 lg:block">{sidebar}</aside>
+    <div className="min-h-dvh lg:grid lg:grid-cols-[248px_1fr]">
+      <aside className="sticky top-0 hidden h-dvh border-r border-border bg-surface/50 lg:block">{sidebar}</aside>
 
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
-          <div className="absolute inset-0 bg-black/70" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute inset-y-0 left-0 w-72 border-r border-border bg-surface animate-rise">
-            <Button variant="ghost" size="icon-sm" className="absolute right-3 top-4" onClick={() => setMobileOpen(false)} aria-label="Fechar menu">
+          <div className="absolute inset-0 bg-black/70 animate-fade-in" onClick={() => setMobileOpen(false)} />
+          <aside className="absolute inset-y-0 left-0 w-[min(18rem,85vw)] border-r border-border bg-surface animate-rise">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="absolute right-3 top-4 z-10"
+              onClick={() => setMobileOpen(false)}
+              aria-label="Fechar menu"
+              autoFocus
+            >
               <X />
             </Button>
             {sidebar}
@@ -187,17 +268,23 @@ export function AppShell({
       )}
 
       <div className="min-w-0">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-bg/80 px-4 backdrop-blur lg:hidden">
-          <Button variant="ghost" size="icon-sm" onClick={() => setMobileOpen(true)} aria-label="Abrir menu">
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-bg/80 px-3 backdrop-blur lg:hidden">
+          <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)} aria-label="Abrir menu" aria-expanded={mobileOpen}>
             <Menu />
           </Button>
-          <Logo />
+          <Link href="/app" aria-label="ScaleX — dashboard">
+            <Logo />
+          </Link>
+          <span className="ml-auto max-w-[45%] truncate rounded-md border border-border bg-surface px-2 py-1 text-[11px] text-fg-muted">
+            {workspace.name}
+          </span>
         </header>
         {banner}
-        <main id="conteudo" className="mx-auto w-full max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <main id="conteudo" className="mx-auto w-full max-w-[1400px] px-4 pb-28 pt-5 sm:px-6 lg:px-8 lg:py-8">
           {children}
         </main>
       </div>
+      <MobileTabBar onMore={() => setMobileOpen(true)} />
     </div>
   );
 }

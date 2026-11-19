@@ -17,9 +17,11 @@ export function formatDate(iso: string | null | undefined): string {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeZone: TZ }).format(new Date(iso));
 }
 
-export function formatRelative(iso: string | null | undefined, now = Date.now()): string {
+/** pastOnly: para eventos que já aconteceram (ex.: última sincronização), nunca exibe "em X horas". */
+export function formatRelative(iso: string | null | undefined, now = Date.now(), pastOnly = false): string {
   if (!iso) return "nunca";
-  const diff = Date.parse(iso) - now;
+  let diff = Date.parse(iso) - now;
+  if (pastOnly && diff > 0) diff = 0;
   const abs = Math.abs(diff);
   const rtf = new Intl.RelativeTimeFormat("pt-BR", { numeric: "auto" });
   if (abs < 60_000) return "agora";

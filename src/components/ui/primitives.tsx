@@ -65,13 +65,12 @@ const STATUS_TONE: Record<TargetStatus, Tone> = {
 
 export function StatusBadge({ status, simulated }: { status: TargetStatus; simulated?: boolean }) {
   return (
-    <Badge tone={STATUS_TONE[status]}>
+    <Badge tone={STATUS_TONE[status]} title={simulated && status === "published" ? "Publicação simulada (conta demo): nada foi enviado ao Instagram" : undefined}>
       <span
         className={cn("size-1.5 rounded-full bg-current", status === "processing" && "animate-pulse")}
         aria-hidden
       />
-      {STATUS_LABEL[status]}
-      {simulated && status === "published" ? " (simulação)" : ""}
+      {simulated && status === "published" ? "Simulado" : STATUS_LABEL[status]}
     </Badge>
   );
 }
@@ -164,7 +163,14 @@ export function PageHeader({
 }
 
 export function Avatar({ src, name, size = 32 }: { src: string | null; name: string; size?: number }) {
-  const initials = name.replace(/^@/, "").slice(0, 2).toUpperCase();
+  // Ignora prefixos genéricos (ex.: "demo.") para que contas diferentes tenham iniciais diferentes.
+  const clean = name.replace(/^@/, "").replace(/^demo[._-]/i, "");
+  // Só partes que começam com letra (ignora sufixos numéricos como "_04").
+  const parts = clean.split(/[._\s-]+/).filter((p) => /^\p{L}/u.test(p));
+  const initials = ((parts[0]?.[0] ?? "?") + (parts[1]?.[0] ?? parts[0]?.[1] ?? "")).toUpperCase();
+  let hash = 0;
+  for (const ch of clean) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  const hue = hash % 360;
   return src ? (
     // eslint-disable-next-line @next/next/no-img-element -- avatares vêm de CDNs com URLs assinadas e expiram
     <img
@@ -178,8 +184,13 @@ export function Avatar({ src, name, size = 32 }: { src: string | null; name: str
   ) : (
     <span
       aria-hidden
-      className="grid shrink-0 place-items-center rounded-full border border-border bg-gradient-to-br from-surface-3 to-surface-2 text-[10px] font-semibold text-fg-muted"
-      style={{ width: size, height: size }}
+      className="grid shrink-0 place-items-center rounded-full border border-white/10 font-semibold text-white/90"
+      style={{
+        width: size,
+        height: size,
+        fontSize: Math.max(9, Math.round(size * 0.36)),
+        background: `linear-gradient(135deg, hsl(${hue} 55% 38%), hsl(${(hue + 40) % 360} 45% 22%))`,
+      }}
     >
       {initials}
     </span>

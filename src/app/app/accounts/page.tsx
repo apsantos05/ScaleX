@@ -43,10 +43,12 @@ export default async function AccountsPage({ searchParams }: PageProps<"/app/acc
       {error && <Alert tone="danger" className="mb-4">{error}</Alert>}
       {connected && <Alert tone="success" className="mb-4">Conta @{connected} conectada com sucesso.</Alert>}
       {!isInstagramConfigured() && (
-        <Alert tone="info" className="mb-4" title="Conexão real indisponível neste ambiente">
-          Para conectar contas reais configure o app da Meta (Instagram API with Instagram Login) e as variáveis{" "}
-          <code className="font-mono">INSTAGRAM_APP_ID</code>, <code className="font-mono">INSTAGRAM_APP_SECRET</code> e{" "}
-          <code className="font-mono">TOKEN_ENCRYPTION_KEY</code>. Apenas contas profissionais (Empresa/Criador) são suportadas.
+        <Alert tone="info" className="mb-4" title="Conexão com o Instagram em ativação">
+          Em breve você poderá conectar contas profissionais (Empresa ou Criador) pelo login oficial do Instagram — sem
+          compartilhar senha. Até lá, use as contas Demo para testar.
+          {process.env.NODE_ENV === "development" && (
+            <span className="mt-1 block font-mono text-[11px] text-fg-subtle">dev: defina INSTAGRAM_APP_ID, INSTAGRAM_APP_SECRET e TOKEN_ENCRYPTION_KEY</span>
+          )}
         </Alert>
       )}
       <AccountsManager accounts={accounts} canEdit={roleAtLeast(role, "editor")} canDisconnect={roleAtLeast(role, "admin")} initialStatus={typeof sp.status === "string" ? sp.status : ""} />
